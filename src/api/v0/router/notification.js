@@ -1,4 +1,5 @@
-const router = require('../router/playList')
+const express = require('express')
+const router = express.Router()
 const Auth = require('../../../middleware/auth')
 const Notification = require('../module/notification')
 
@@ -27,6 +28,10 @@ router.get('/read_all', Auth.authenGTUser, async (req, res, next) => {
         if (result) {
             return res.status(200).json({
                 message: 'Đánh dấu đọc tất cả thông báo thành công',
+            })
+        }else{
+            return res.status(400).json({
+                message: 'Không có thông báo để đọc',
             })
         }
     } catch (err) {
@@ -61,6 +66,26 @@ router.get('/list', Auth.authenGTUser, async (req, res, next) => {
                 data: data,
             })
         }
+    } catch (err) {
+        return res.sendStatus(500)
+    }
+})
+
+router.delete('/delete_all', Auth.authenGTUser, async (req, res, next) => {
+    try {
+        const id_account = Auth.getTokenData(req).id_account
+        const result = await Notification.deleteAllNotification(id_account)
+
+        if (result) {
+            return res.status(200).json({
+                message: 'Xóa tất cả thông báo thành công',
+            })
+        }else{
+            return res.status(400).json({
+                message: 'Không có thông báo để xóa',
+            })
+        }
+
     } catch (err) {
         return res.sendStatus(500)
     }
@@ -137,20 +162,6 @@ router.delete('/:id_notification/delete', Auth.authenGTUser, async (req, res, ne
     }
 })
 
-// router.delete('/remove_all', Auth.authenGTUser, async (req, res, next) => {
-//     try {
-//         const id_account = Auth.getTokenData(req).id_account
-//         const result = await Notification.deleteAllNotification(id_account)
 
-//         if (result) {
-//             return res.status(200).json({
-//                 message: 'Xóa tất cả thông báo thành công',
-//             })
-//         }
-
-//     } catch (err) {
-//         return res.sendStatus(500)
-//     }
-// })
 
 module.exports = router

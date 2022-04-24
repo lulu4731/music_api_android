@@ -5,7 +5,7 @@ const Playlist_Song = require('../module/playlistSong')
 const Comment = require('../module/comment')
 const Notification = require('../module/notification')
 
-router.get('/:id_song/comment', Auth.authenGTUser, async (req, res, next) => {
+router.get('/:id_song/comment', async (req, res, next) => {
     const id_song = req.params.id_song
     let data = []
 

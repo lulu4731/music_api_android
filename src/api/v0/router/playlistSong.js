@@ -79,17 +79,24 @@ router.delete('/:id_playlist/song/:id_song', Auth.authenGTUser, async (req, res,
     }
 })
 
-router.get('/:id_playlist', Auth.authenGTUser, async (req, res, next) => {
+router.get('/:id_playlist', async (req, res, next) => {
     let page = req.query.page
-    const id_account = Auth.getTokenData(req).id_account
+    // const id_account = Auth.getTokenData(req).id_account
     const id_playlist = req.params.id_playlist
 
     try {
-        const listPlaylistSong = await Playlist_Song.listPlaylistSong(id_account, id_playlist, page)
+        const listPlaylistSong = await Playlist_Song.listPlaylistSong(id_playlist, page)
+        const playlistExist = await Playlist_Song.hasStatusPlaylist(id_playlist)
+
+        if (!playlistExist) {
+            return res.status(400).json({
+                message: "Playlist chưa công khai",
+            })
+        }
 
         if (listPlaylistSong) {
             return res.status(200).json({
-                message: "Lấy danh sách bài hát trong playlist thành công",
+                message: "Lấy danh sách bài hát công khai trong 1 playlist công khai thành công",
                 data: listPlaylistSong
             })
         }
