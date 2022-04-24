@@ -1,3 +1,5 @@
+//F6 lưu dữ liệu
+
 CREATE TABLE account(
 	id_account serial PRIMARY KEY,
 	email varchar(50) UNIQUE,

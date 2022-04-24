@@ -1,0 +1,101 @@
+const pool = require('../../../database')
+
+const db = {}
+
+db.add = (id_playlist, id_song) => {
+    return new Promise((resolve, reject) => {
+        pool.query("INSERT INTO playlist_song (id_playlist, id_song) VALUES ($1, $2) RETURNING id_playlist",
+            [id_playlist, id_song], (err, result) => {
+                if (err) return reject(err)
+                return resolve(result.rows[0].id_playlist)
+            })
+    })
+}
+
+db.has = (id_playlist, id_song) => {
+    return new Promise((resolve, reject) => {
+        pool.query("SELECT * FROM playlist_song WHERE id_playlist=$1 AND id_song=$2",
+            [id_playlist, id_song], (err, result) => {
+                if (err) return reject(err)
+                return resolve(result.rows[0])
+            })
+    })
+}
+
+db.delete = (id_playlist, id_song) => {
+    return new Promise((resolve, reject) => {
+        pool.query("DELETE FROM playlist_song WHERE id_playlist=$1 AND id_song=$2",
+            [id_playlist, id_song], (err, result) => {
+                if (err) return reject(err);
+                return resolve(result.rows[0])
+            })
+    })
+}
+
+
+//song
+db.hasSong = (id_song) => {
+    return new Promise((resolve, reject) => {
+        pool.query("SELECT name_song FROM song WHERE id_song=$1",
+            [id_song],
+            (err, result) => {
+                if (err) return reject(err);
+                return resolve(result.rowCount > 0);
+            })
+    })
+}
+
+// db.list = (id_account, id_playlist, page = 0) => {
+//     if (page === 0) {
+//         return new Promise((resolve, reject) => {
+//             pool.query(`SELECT PLS.id_song FROM playlist PL 
+//             INNER JOIN playlist_song PLS ON PL.id_playlist = PLS.id_playlist 
+//             WHERE id_account = $1 AND PL.id_playlist = $2
+//             ORDER BY PLS.playlist_song_time DESC`,
+//                 [id_account, id_playlist], (err, result) => {
+//                     if (err) return reject(err);
+//                     return resolve(result.rows);
+//                 })
+//         })
+//     } else {
+//         return new Promise((resolve, reject) => {
+//             pool.query(`SELECT PLS.id_song FROM playlist PL 
+//             INNER JOIN playlist_song PLS ON PL.id_playlist = PLS.id_playlist 
+//             WHERE id_account = $1 AND PL.id_playlist = $2
+//             ORDER BY PLS.playlist_song_time DESC LIMIT 10 OFFSET $3`,
+//                 [id_account, id_playlist, (page - 1) * 10], (err, result) => {
+//                     if (err) return reject(err);
+//                     return resolve(result.rows);
+//                 })
+//         })
+//     }
+// }
+
+db.listPlaylistSong = (id_account, id_playlist, page = 0) => {
+    if (page == 0) {
+        return new Promise((resolve, reject) => {
+            pool.query(`SELECT S.* FROM playlist PL 
+            INNER JOIN playlist_song PLS ON PL.id_playlist = PLS.id_playlist
+            INNER JOIN song S ON PLS.id_song = S.id_song 
+            WHERE PL.id_account = $1 AND PL.id_playlist = $2
+            ORDER BY PLS.playlist_song_time DESC`,
+                [id_account, id_playlist], (err, result) => {
+                    if (err) return reject(err);
+                    return resolve(result.rows);
+                })
+        })
+    } else {
+        return new Promise((resolve, reject) => {
+            pool.query(`SELECT S.* FROM playlist PL 
+            INNER JOIN playlist_song PLS ON PL.id_playlist = PLS.id_playlist
+            INNER JOIN song S ON PLS.id_song = S.id_song 
+            WHERE PL.id_account = $1 AND PL.id_playlist = $2
+            ORDER BY PLS.playlist_song_time DESC LIMIT 10 OFFSET $3`,
+                [id_account, id_playlist, (page - 1) * 10], (err, result) => {
+                    if (err) return reject(err);
+                    return resolve(result.rows);
+                })
+        })
+    }
+}
+module.exports = db
