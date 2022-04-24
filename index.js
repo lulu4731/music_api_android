@@ -4,7 +4,7 @@ const dotenv = require('dotenv');
 const db = require('./src/database');
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('./src/swagger.json');
-const port = 8000;
+const port = process.env.PORT || 8000;
 const apiUrl = '/api/v0';
 // const writeData = require('./src/firebaseConfig/writeData');
 // const readData = require('./src/firebaseConfig/readData');
@@ -198,5 +198,5 @@ app.use(`${apiUrl}/account-device`, require('./src/api/v0/router/account_device'
 
 
 app.listen(port, () => {
-    console.log(`Start website http://localhost:${port}`)
+    console.log("server is listening on port " + port);
 });
