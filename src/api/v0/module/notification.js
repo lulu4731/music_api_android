@@ -81,7 +81,7 @@ db.readAllNotification = (id_account) => {
             [id_account],
             (err, result) => {
                 if (err) return reject(err);
-                return resolve(result.rows[0])
+                return resolve(result)
             })
     })
 }

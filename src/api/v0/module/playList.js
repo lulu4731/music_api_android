@@ -62,7 +62,7 @@ db.hasNameID = (id_playlist) => {
     return new Promise((resolve, reject) => {
         pool.query("SELECT name_playlist FROM playlist WHERE id_playlist=$1", [id_playlist], (err, result) => {
             if (err) return reject(err);
-            return resolve(result.rows[0]);
+            return resolve(result.rows[0].name_playlist);
         })
     })
 }

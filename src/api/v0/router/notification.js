@@ -2,27 +2,49 @@ const router = require('../router/playList')
 const Auth = require('../../../middleware/auth')
 const Notification = require('../module/notification')
 
-router.get('/all', Auth.authenGTUser, async (req, res, next) => {
+router.get('/count', Auth.authenGTUser, async (req, res, next) => {
     try {
         const id_account = Auth.getTokenData(req).id_account
-        const data = await Notification.listAllNotification(id_account)
-        return res.status(200).json({
-            message: 'Danh sách thông báo thành công',
-            data: data,
-        })
+        const count = await Notification.countUnreadNotification(id_account)
+
+        if (count) {
+            return res.status(200).json({
+                message: 'Lấy số lượng thông báo chưa đọc',
+                data: count,
+            })
+        }
+
     } catch (err) {
         return res.sendStatus(500)
     }
 })
 
-router.get('/:id_notification', Auth.authenGTUser, async (req, res, next) => {
+router.get('/read_all', Auth.authenGTUser, async (req, res, next) => {
     try {
-        const id_notification = req.params.id_notification
-        const data = await Notification.has(id_notification)
-        return res.status(200).json({
-            message: 'Lấy 1 thông báo thành công',
-            data: data,
-        })
+        const id_account = Auth.getTokenData(req).id_account;
+        const result = await Notification.readAllNotification(id_account)
+
+        if (result) {
+            return res.status(200).json({
+                message: 'Đánh dấu đọc tất cả thông báo thành công',
+            })
+        }
+    } catch (err) {
+        return res.sendStatus(500)
+    }
+})
+
+router.get('/all', Auth.authenGTUser, async (req, res, next) => {
+    try {
+        const id_account = Auth.getTokenData(req).id_account
+        const data = await Notification.listAllNotification(id_account)
+
+        if (data) {
+            return res.status(200).json({
+                message: 'Danh sách thông báo thành công',
+                data: data,
+            })
+        }
     } catch (err) {
         return res.sendStatus(500)
     }
@@ -32,49 +54,13 @@ router.get('/list', Auth.authenGTUser, async (req, res, next) => {
     try {
         const id_account = Auth.getTokenData(req).id_account
         const data = await Notification.listNotification(id_account)
-        return res.status(200).json({
-            message: 'Danh sách thông báo chưa đọc thành công',
-            data: data,
-        })
-    } catch (err) {
-        return res.sendStatus(500)
-    }
-})
 
-router.get('/count', Auth.authenGTUser, async (req, res, next) => {
-    try {
-        const id_account = Auth.getTokenData(req).id_account;
-        const count = await Notification.countUnreadNotification(id_account);
-        return res.status(200).json({
-            message: 'Lấy số lượng thông báo chưa đọc',
-            data: count,
-        })
-    } catch (err) {
-        return res.sendStatus(500)
-    }
-})
-
-router.get('/read_all', Auth.authenGTUser, async (req, res, next) => {
-    try {
-        const id_account = Auth.getTokenData(req).id_account;
-        const data = await Notification.readAllNotification(id_account);
-        return res.status(200).json({
-            message: 'Đánh dấu đọc tất cả thông báo thành công',
-            data: data,
-        });
-    } catch (err) {
-        return res.sendStatus(500)
-    }
-})
-
-router.delete('/delete_all', Auth.authenGTUser, async (req, res, next) => {
-    try {
-        const id_account = Auth.getTokenData(req).id_account;
-        const data = await Notification.deleteAllNotification(id_account);
-        return res.status(200).json({
-            message: 'Xóa tất cả thông báo thành công',
-            data: data,
-        });
+        if (data) {
+            return res.status(200).json({
+                message: 'Danh sách thông báo chưa đọc thành công',
+                data: data,
+            })
+        }
     } catch (err) {
         return res.sendStatus(500)
     }
@@ -82,29 +68,16 @@ router.delete('/delete_all', Auth.authenGTUser, async (req, res, next) => {
 
 router.get('/:id_notification', Auth.authenGTUser, async (req, res, next) => {
     try {
-        const id_notification = req.params.id_notification;
-        const notification = await Notification.has(id_notification);
-        const id_account = Auth.getTokenData(req).id_account;
+        const id_notification = req.params.id_notification
+        const data = await Notification.has(id_notification)
 
-        if (!notification) {
-            return res.status(404).json({
-                message: 'Thông báo không tồn tại'
-            })
-        } else {
-            if (notification.id_account !== id_account) {
-                return res.status(403).json({
-                    message: 'Bạn không có quyền đọc thông báo của người khác!'
-                })
-            }
-            await Notification.readNotification(id_notification);
+        if (data) {
             return res.status(200).json({
-                message: 'Lấy thông báo thành công',
-                data: notification
+                message: 'Lấy 1 thông báo thành công',
+                data: data,
             })
         }
-
     } catch (err) {
-        console.log(err);
         return res.sendStatus(500)
     }
 })
@@ -143,7 +116,6 @@ router.delete('/:id_notification/delete', Auth.authenGTUser, async (req, res, ne
         const notification_account = await Notification.has(id_notification);
         const id_account = Auth.getTokenData(req).id_account;
 
-        console.log(notification_account)
         if (!notification_account) {
             return res.status(404).json({
                 message: 'Thông báo không tồn tại'
@@ -155,8 +127,7 @@ router.delete('/:id_notification/delete', Auth.authenGTUser, async (req, res, ne
                 message: 'Bạn không có quyền xóa thông báo này',
             })
         } else {
-            const a = await Notification.deleteNotification(id_notification)
-            console.log(a)
+            await Notification.deleteNotification(id_notification)
             return res.status(200).json({
                 message: 'Xóa thông báo thành công'
             })
@@ -165,5 +136,21 @@ router.delete('/:id_notification/delete', Auth.authenGTUser, async (req, res, ne
         return res.sendStatus(500)
     }
 })
+
+// router.delete('/remove_all', Auth.authenGTUser, async (req, res, next) => {
+//     try {
+//         const id_account = Auth.getTokenData(req).id_account
+//         const result = await Notification.deleteAllNotification(id_account)
+
+//         if (result) {
+//             return res.status(200).json({
+//                 message: 'Xóa tất cả thông báo thành công',
+//             })
+//         }
+
+//     } catch (err) {
+//         return res.sendStatus(500)
+//     }
+// })
 
 module.exports = router

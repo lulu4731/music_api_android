@@ -63,7 +63,7 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
                     if (name_playlistExists) {
                         return res.status(400).json({
                             message: 'Tên playlist bị trùng'
-                        })
+                        })  
                     }
                 }
 
@@ -73,15 +73,19 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
                 }
                 const playlist = await Playlist.update(id, playList)
 
-                res.status(400).json({
+                return res.status(400).json({
                     message: 'Cập nhật playlist thành công',
                     data: playlist
                 })
             } else {
-                res.status(400).json({
+                return res.status(400).json({
                     message: 'Thiếu tên playlsit'
                 })
             }
+        } else {
+            return res.status(404).json({
+                message: 'Không tìm thấy playlist để xóa'
+            })
         }
     } catch (error) {
         console.log(error)
