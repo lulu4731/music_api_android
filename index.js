@@ -65,7 +65,6 @@ app.post(`${apiUrl}/a/add`, async (req, res) => {
     //     })
     // }
     sendNotification(message)
-    //heheehe
 })
 
 //playlist
