@@ -1,0 +1,43 @@
+### Thêm bài hát
+POST http://localhost:8000/api/v0/song/
+Content-Type: application/json
+
+{
+    "name_song": "Cánh hoa úa tàn 123",
+    "link": "folder/music/rap",
+    "id_album": "5",
+    "types": "111125",
+    "accounts": ""
+}
+
+### Cập nhật bài hát
+PUT http://localhost:8000/api/v0/song/41
+Content-Type: application/json
+
+{
+    "name_song": "TEST456Nhieuaccount123",
+    "link": "folder/music/rap",
+    "types": "1111",
+    "accounts": "1"
+}
+
+### Lấy thông tin bài hát
+GET  http://localhost:8000/api/v0/song/4
+Content-Type: application/json
+
+### Lấy danh sách bài hát xem nhiều
+GET  http://localhost:8000/api/v0/song/best-list
+Content-Type: application/json
+
+### Lấy danh sách bài hát theo thể loại
+GET  http://localhost:8000/api/v0/song/type/5
+Content-Type: application/json
+
+### Xóa bản thân ra khỏi bài hát được tag
+DELETE  http://localhost:8000/api/v0/song/deleteSinger/42
+Content-Type: application/json
+
+### Xóa bài hát
+DELETE  http://localhost:8000/api/v0/song/deleteSong/5
+Content-Type: application/json
+

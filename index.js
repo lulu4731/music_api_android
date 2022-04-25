@@ -39,6 +39,10 @@ app.use((error, req, res, next) => {
 
 // My API
 
+// Song
+app.use(`${apiUrl}/song`, require('./src/api/v0/router/song'));
+//Album
+app.use(`${apiUrl}/album`, require('./src/api/v0/router/album'));
 
 
 

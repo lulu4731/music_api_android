@@ -99,7 +99,7 @@ CREATE TABLE playlist(
 	FOREIGN KEY (id_account) REFERENCES account(id_account)
 );
 
-CREATE TABLE playlist_song(
+CREATE TABLE song_type(
 	id_playlist serial,
 	id_song serial NOT NULL,
 	playlist_song_time timestamp without time zone default timezone('Asia/Ho_Chi_Minh'::text, now()),
@@ -107,7 +107,7 @@ CREATE TABLE playlist_song(
 	PRIMARY KEY(id_playlist, id_song),
 
 	FOREIGN KEY (id_playlist) REFERENCES playlist(id_playlist),
-	FOREIGN KEY (id_song) REFERENCES song(id_song)
+	FOREIGN KEY (id_song) REFERENCES song(id_song) ON DELETE ON DELETE CASCADE
 );
 
 CREATE TABLE follow_account(
@@ -121,3 +121,15 @@ CREATE TABLE follow_account(
 	FOREIGN KEY (id_following) REFERENCES account(id_account)
 );
 	
+alter table song_type add FOREIGN KEY (id_song) REFERENCES song(id_song) ON DELETE CASCADE
+
+-- nháp của P
+select exists(select 1 from love where love.id_account = $1)
+
+SELECT  song.id_song, song.name_song, song.link, song.listen, count(love.id_song) as qtylove, song.id_account, ss.account_name as singer, song.id_album, song.created, exists(select 1 from love where love.id_account = '1') as lovestatus, st.name_type
+FROM ((( song 
+LEFT JOIN love ON song.id_song = love.id_song)
+INNER JOIN (SELECT * FROM song_type INNER JOIN type ON song_type.id_type = type .id_type) as st ON song.id_song = st.id_song)
+LEFT JOIN (SELECT * FROM singer_song INNER JOIN account ON singer_song.id_account = account .id_account) as ss ON song.id_song = ss.id_song)
+WHERE song.id_song = 5
+GROUP BY song.id_song, st.name_type, st.id_song, ss.account_name

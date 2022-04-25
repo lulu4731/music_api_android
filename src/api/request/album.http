@@ -1,0 +1,7 @@
+### Thêm album
+POST http://localhost:8000/api/v0/album/
+Content-Type: application/json
+
+{
+    "name_album": "Hay nhất vcl"
+}
