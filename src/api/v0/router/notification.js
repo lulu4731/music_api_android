@@ -29,7 +29,7 @@ router.get('/read_all', Auth.authenGTUser, async (req, res, next) => {
             return res.status(200).json({
                 message: 'Đánh dấu đọc tất cả thông báo thành công',
             })
-        }else{
+        } else {
             return res.status(400).json({
                 message: 'Không có thông báo để đọc',
             })
@@ -80,7 +80,7 @@ router.delete('/delete_all', Auth.authenGTUser, async (req, res, next) => {
             return res.status(200).json({
                 message: 'Xóa tất cả thông báo thành công',
             })
-        }else{
+        } else {
             return res.status(400).json({
                 message: 'Không có thông báo để xóa',
             })

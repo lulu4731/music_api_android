@@ -29,8 +29,7 @@ db.listNotification = (id_account) => {
 
 db.listAllNotification = (id_account) => {
     return new Promise((resolve, reject) => {
-        pool.query(`SELECT *
-        FROM notification 
+        pool.query(`SELECT id_notification, id_account, content, action, notification_status, TO_CHAR(notification_time:: date, 'dd/mm/yyyy') AS day, TO_CHAR(notification_time:: time, 'hh24:mi') AS time FROM notification
         WHERE id_account = $1
         ORDER BY id_notification desc`,
             [id_account],

@@ -4,6 +4,7 @@ const Auth = require('../../../middleware/auth')
 const Playlist_Song = require('../module/playlistSong')
 const Comment = require('../module/comment')
 const Notification = require('../module/notification')
+const sendNotification = require('../../../firebaseConfig/sendNotification')
 
 router.get('/:id_song/comment', async (req, res, next) => {
     const id_song = req.params.id_song
@@ -35,6 +36,46 @@ router.get('/:id_song/comment', async (req, res, next) => {
     }
 })
 
+router.get('/comment/:id_cmt', async (req, res, next) => {
+    const id_cmt = req.params.id_cmt
+
+    const cmtExists = await Comment.has(id_cmt)
+    if (cmtExists) {
+        const data = await Comment.getComment(id_cmt)
+
+        return res.status(200).json({
+            message: 'Lấy 1 bình luận thành công',
+            data
+        })
+    } else {
+        return res.status(404).json({
+            message: 'Bình luận này không tồn tại'
+        })
+    }
+})
+
+router.get('/comment_parent/:id_cmt', async (req, res, next) => {
+    const id_cmt = req.params.id_cmt
+
+    const cmtExists = await Comment.has(id_cmt)
+    if (cmtExists) {
+        const data = await Comment.getComment(id_cmt)
+        const listChildren = await Comment.getListCommentChildren(id_cmt)
+
+        return res.status(200).json({
+            message: 'Lấy 1 bình luận thành công',
+            data: {
+                ...data,
+                listChildren: listChildren
+            }
+        })
+    } else {
+        return res.status(404).json({
+            message: 'Bình luận này không tồn tại'
+        })
+    }
+})
+
 router.post('/:id_song/comment', Auth.authenGTUser, async (req, res, next) => {
     try {
         const content = req.body.content.trim()
@@ -51,6 +92,21 @@ router.post('/:id_song/comment', Auth.authenGTUser, async (req, res, next) => {
         const songExists = await Playlist_Song.hasSong(id_song)
         if (songExists) {
             if (content) {
+                const id_account_song = await Comment.getIdAccountSong(id_song)
+                if (+id_account_song !== +id_account) {
+                    const account_name = await Comment.getNameAccount(id_account)
+                    const token_device = await Comment.getTokenDevice(id_account_song)
+                    const message = {
+                        data: {
+                            title: `Tài khoản của bạn ${account_name} đã bình luận bài hát của bạn`,
+                            content: content,
+                            action: ""
+                        },
+                        token: token_device
+                    }
+                    await Notification.addNotification(message.data.title + " : " + message.data.content, message.data.action, +id_account_song)
+                    await sendNotification(message)
+                }
                 const comment = await Comment.addCommentParent(id_account, id_song, content)
                 return res.status(200).json({
                     message: "Bình luận thành công",
@@ -104,8 +160,20 @@ router.post('/:id_song/comment/:id_cmt_parent/reply', Auth.authenGTUser, async (
             if (content) {
                 const comment = await Comment.addCommentChildren(id_account, id_song, content, id_cmt_parent)
                 const id_account_parent = await Comment.hasIdAccount(id_cmt_parent)
-                if (id_account_parent !== id_account) {
-                    await Notification.addNotification(`Tài khoản có ID: ${id_account} đã trả lời bình luận của bạn`, `id_cmt-parent: ${id_cmt_parent}, id_cmt_children: ${comment.id_cmt}`, id_account_parent)
+
+                if (+id_account_parent !== +id_account) {
+                    const account_name = await Comment.getNameAccount(id_account)
+                    const token_device = await Comment.getTokenDevice(id_account_parent)
+                    const message = {
+                        data: {
+                            title: `Tài khoản của bạn ${account_name} đã trả lời bình luận của bạn`,
+                            content: content,
+                            action: `id_cmt-parent: ${id_cmt_parent}-id_cmt_children: ${comment.id_cmt}`
+                        },
+                        token: token_device
+                    }
+                    await Notification.addNotification(message.data.title + " : " + message.data.content, message.data.action, id_account_parent)
+                    await sendNotification(message)
                 }
                 return res.status(200).json({
                     message: "Trả lời bình luận thành công",
@@ -180,8 +248,6 @@ router.put('/:id_song/comment/:id_cmt/update', Auth.authenGTUser, async (req, re
                 message: "Không phải chính chủ, không được đổi cmt",
             })
         }
-
-
     } catch (error) {
         console.log(error)
         res.sendStatus(500)
