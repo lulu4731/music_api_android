@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "nodemon index.js"
   },
   "author": "dang",
   "license": "ISC",
@@ -18,6 +19,7 @@
     "firebase-admin": "^10.1.0",
     "jsonwebtoken": "^8.5.1",
     "nodemon": "^2.0.15",
+    "npm-watch": "^0.11.0",
     "pg": "^8.7.3",
     "swagger-ui-express": "^4.3.0"
   }
