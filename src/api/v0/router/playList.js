@@ -74,7 +74,7 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
                 }
                 const playlist = await Playlist.update(id, playList)
 
-                return res.status(400).json({
+                return res.status(200).json({
                     message: 'Cập nhật playlist thành công',
                     data: playlist
                 })
