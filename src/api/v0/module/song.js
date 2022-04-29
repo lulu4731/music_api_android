@@ -4,10 +4,10 @@ const pool = require('../../../database');
 const db = {};
 
 //Thêm bài hát
-db.addSong = (id_account, song) => {
+db.addSong = (id_account, linkSong, imgSong, song) => {
     return new Promise((resolve, reject) => {
-        pool.query("INSERT INTO song(id_account, name_song, link, lyrics,description, id_album) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
-            [id_account, song.name_song, song.link, song.lyrics, song.description, song.id_album],
+        pool.query("INSERT INTO song(id_account, name_song, link, lyrics,description, id_album, image_song) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
+            [id_account, song.name_song, linkSong, song.lyrics, song.description, song.id_album, imgSong],
             (err, result) => {
                 if (err) return reject(err);
                 return resolve(result.rows[0]);
@@ -42,7 +42,7 @@ db.addSingerSong = (id_acc, id_song) => {
 //Lấy thông tin bài hát
 db.getSong = (id_song, idAccount) => {
     return new Promise((resolve, reject) => {
-        pool.query("SELECT  song.id_song, song.name_song, song.link, song.listen, count(love.id_song) as qtylove, account.account_name, album.name_album, song.created, exists(select 1 from love where love.id_account = $1) as lovestatus "
+        pool.query("SELECT  song.id_song, song.name_song, song.link, song.listen,song.image_song, count(love.id_song) as qtylove, account.account_name, album.name_album, song.created, exists(select 1 from love where love.id_account = $1) as lovestatus "
             + "FROM(((song "
             + "LEFT JOIN love ON song.id_song = love.id_song) "
             + "INNER JOIN album ON song.id_album = album.id_album) "
@@ -100,16 +100,16 @@ db.deleteTypeSong = (id_song) => {
             [id_song],
             (err, result) => {
                 if (err) return reject(err);
-                return resolve(result);
+                return resolve(result.rowCount > 0);
             })
     })
 }
 
 //cập nhật bài hát
-db.updateSong = (id_song, song) => {
+db.updateSong = (id_song, linkSong, linkImage, song) => {
     return new Promise((resolve, reject) => {
-        pool.query("UPDATE song SET name_song = $1, link= $2, lyrics= $3, description= $4, id_album= $5 WHERE id_song = $6",
-            [song.name_song, song.link, song.lyrics, song.description, song.id_album, id_song],
+        pool.query("UPDATE song SET name_song = $1, link= $2, lyrics= $3, description= $4, id_album= $5, image_song = $6 WHERE id_song = $7",
+            [song.name_song, linkSong, song.lyrics, song.description, song.id_album, linkImage, id_song],
             (err, result) => {
                 if (err) return reject(err);
                 return resolve(result);
@@ -118,10 +118,10 @@ db.updateSong = (id_song, song) => {
 }
 
 // Xóa bài hát chỉ tác giả được xóa
-db.deleteSong = (id_song,idAccount) => {
+db.deleteSong = (id_song, idAccount) => {
     return new Promise((resolve, reject) => {
         pool.query("DELETE FROM song WHERE id_song = $1 AND id_account = $2",
-            [id_song,idAccount],
+            [id_song, idAccount],
             (err, result) => {
                 if (err) return reject(err);
                 return resolve(result.rowCount > 0);
@@ -132,7 +132,7 @@ db.deleteSong = (id_song,idAccount) => {
 //Lấy ds bài hát theo thể loại
 db.getListSongtype = (id_type) => {
     return new Promise((resolve, reject) => {
-        pool.query("SELECT song.* FROM song, song_type WHERE song.id_song = song_type.id_song AND song_type.id_type = $1",
+        pool.query("SELECT song.* FROM song, song_type WHERE song.id_song = song_type.id_song AND song_type.id_type = $1 ORDER BY song.created DESC",
             [id_type],
             (err, result) => {
                 if (err) return reject(err);
@@ -144,7 +144,7 @@ db.getListSongtype = (id_type) => {
 //Lấy danh sách 20 bài hát nhiều lượt nghe nhất
 db.getBestSong = () => {
     return new Promise((resolve, reject) => {
-        pool.query("SELECT song.* FROM song WHERE song.listen != 0 ORDER BY song.listen DESC FETCH FIRST 20 ROWS ONLY",
+        pool.query("SELECT song.* FROM song WHERE song.listen != 0 ORDER BY song.listen DESC FETCH FIRST 100 ROWS ONLY",
             (err, result) => {
                 if (err) return reject(err);
                 return resolve(result.rows);
@@ -153,21 +153,21 @@ db.getBestSong = () => {
 }
 
 //Xóa bản thân ra khỏi tác giả của bài hát
-db.deleteSingerSong = (id_song, idAccount) => {
+db.deleteSingerSong = (idSong, idAccount) => {
     return new Promise((resolve, reject) => {
-        pool.query("DELETE FROM singer_song WHERE id_song = $1 AND id_account = $2",
-            [id_song,idAccount],
+        pool.query(`DELETE FROM singer_song WHERE id_song = $1 AND id_account = $2`,
+            [idSong,idAccount],
             (err, result) => {
                 if (err) return reject(err);
-                return resolve(result);
+                return resolve(result.rowCount > 0);
             })
     })
 }
 
-db.deleteAccountSong = (idSong, idAccount) => {
+db.deleteSongSingerSong = (idSong) => {
     return new Promise((resolve, reject) => {
-        pool.query("DELETE FROM song WHERE id_song = $1 AND id_account = $2",
-            [idSong, idAccount],
+        pool.query(`DELETE FROM singer_song WHERE id_song = $1`,
+            [idSong],
             (err, result) => {
                 if (err) return reject(err);
                 return resolve(result.rowCount > 0);
@@ -199,4 +199,6 @@ db.deleteSingerSong = (idAccount, idSong) => {
     })
 }
 
-module.exports = db; 
+
+
+module.exports = db
