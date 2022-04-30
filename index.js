@@ -17,7 +17,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use(fileUpload({
     limits: {
-        fileSize: 20000000
+        fileSize: 20 * 1024 * 1024
     },
     abortOnLimit: true
 }));
@@ -30,13 +30,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
 app.use(bodyParser.urlencoded({
-    limit: '20mb',
+    limit: 20 * 1024 * 1024,
     extended: true
 }));
 
 // parse application/json
 app.use(bodyParser.json({
-    limit: '20mb'
+    limit: 20 * 1024 * 1024
 }));
 
 app.use((req, res, next) => {
