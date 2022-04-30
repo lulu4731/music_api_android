@@ -35,17 +35,17 @@ router.post('/', Auth.authenGTUser, async (req, res, next) => {
         let song = req.files.song;
         let image = req.files.img;
 
-        if (song.size > 20 * 1024 * 1024) {
-            return res.status(400).json({
-                message: "Bài hát tải lên có dung lượng lớn hơn 20MB"
-            })
-        }
+        // if (song.size > 20 * 1024 * 1024) {
+        //     return res.status(400).json({
+        //         message: "Bài hát tải lên có dung lượng lớn hơn 20MB"
+        //     })
+        // }
 
-        if (image.size > 20 * 1024 * 1024) {
-            return res.status(400).json({
-                message: "Ảnh tải lên có dung lượng lớn hơn 20MB"
-            })
-        }
+        // if (image.size > 20 * 1024 * 1024) {
+        //     return res.status(400).json({
+        //         message: "Ảnh tải lên có dung lượng lớn hơn 20MB"
+        //     })
+        // }
 
         if (!song) {
             return res.status(400).json({
