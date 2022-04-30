@@ -7,9 +7,8 @@ const jwt = require('jsonwebtoken')
 
 //playList
 router.post('/fake', async (req, res, next) => {
-    const { id_account, name_account } = req.body
-    console.log(name_account)
-    const accessToken = jwt.sign({ id_account, name_account }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '10d' });
+    const id_account = req.body
+    const accessToken = jwt.sign(id_account, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '10d' });
 
     return res.status(200).json({
         accessToken: accessToken
