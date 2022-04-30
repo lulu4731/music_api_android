@@ -15,7 +15,12 @@ db.connect()
 app.use(express.json());
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-app.use(fileUpload());
+app.use(fileUpload({
+    limits: {
+        fileSize: 20000000
+    },
+    abortOnLimit: true
+}));
 
 // for parsing application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended: true }));
