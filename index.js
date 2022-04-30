@@ -29,11 +29,15 @@ app.use(express.urlencoded({ extended: true }));
 // app.use(upload.array());
 app.use(express.static('public'));
 
-
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({
+    limit: '20mb',
+    extended: true
+}));
 
 // parse application/json
-app.use(bodyParser.json());
+app.use(bodyParser.json({
+    limit: '20mb'
+}));
 
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
