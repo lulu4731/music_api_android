@@ -1,6 +1,5 @@
 const express = require('express');
 const app = express();
-const bodyParser = require('body-parser')
 const dotenv = require('dotenv');
 const db = require('./src/database');
 const swaggerUi = require('swagger-ui-express');
@@ -12,32 +11,19 @@ const fileUpload = require('express-fileupload');
 
 dotenv.config();
 db.connect()
-app.use(express.json());
+
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+app.use(express.json({limit: '30mb'}));
+app.use(express.urlencoded({extended: false, limit: '30mb'}));
 
 app.use(fileUpload({
     limits: {
-        fileSize: 20 * 1024 * 1024
+        fileSize: 30*1024*1024
     },
     abortOnLimit: true
 }));
 
-// for parsing application/x-www-form-urlencoded
-app.use(express.urlencoded({ extended: true }));
-
-// for parsing multipart/form-data
-// app.use(upload.array());
-app.use(express.static('public'));
-
-app.use(bodyParser.urlencoded({
-    limit: 20 * 1024 * 1024,
-    extended: true
-}));
-
-// parse application/json
-app.use(bodyParser.json({
-    limit: 20 * 1024 * 1024
-}));
 
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
