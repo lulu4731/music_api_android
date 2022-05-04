@@ -324,6 +324,35 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
     }
 })
 
+// tăng listen 
+router.patch('/listen/:id_song', async (req, res, next) => {
+    try {
+        let idSong = req.params.id_song;
+
+        let existSong = await Song.hasSong(idSong);
+        if (existSong) {
+            let qtyListen = (await Song.getListen(idSong)).listen;
+            console.log(qtyListen);
+            await Song.autoListen(idSong, qtyListen + 1);
+
+
+            
+
+            res.status(200).json({
+                message: 'Tăng lượt nghe thành công'
+            })
+        }
+        else {
+            return res.status(404).json({
+                message: 'Bài hát không tồn tại'
+            })
+        }
+    } catch (error) {
+        console.log(error);
+        res.sendStatus(500);
+    }
+})
+
 
 // xóa bài hát
 router.delete('/deleteSong/:id', Auth.authenGTUser, async (req, res, next) => {

@@ -191,5 +191,30 @@ router.patch('/move/:id_album/song/:id_song', Auth.authenGTUser, async (req, res
     }
 })
 
+router.get('/list-song', Auth.authenGTUser, async(req,res,next)=>{
+    try {
+        let acc = await Auth.getTokenData(req).id_account;
+
+        // Tài khoản bị khóa
+        // if (acc.account_status != 0) {
+        //     return res.status(403).json({
+        //         message: 'Tài khoản đã bị khóa, không thể thêm bài'
+        //     })
+        // }
+
+        let result = await Album.getListAlbum(acc);
+
+        res.status(200).json({
+            message: 'Lấy danh sách thành công',
+            data: result
+        })
+
+
+    } catch (error) {
+        console.log(error);
+        res.statusCode(500);
+    }
+})
+
 
 module.exports = router;
