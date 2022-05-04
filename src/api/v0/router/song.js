@@ -179,7 +179,7 @@ router.get('/:id', async (req, res, next) => {
         // let acc = (await Account.selectId((await Auth.getTokenData(req)).id_account)).id_account;
         // console.log(acc)
 
-        let idAccount = Auth.getTokenData(req).id_account;
+        let idAccount = Auth.getUserID(req).id_account;
         let acc = await Account.selectId(idAccount);
 
         let idSong = req.params.id;
@@ -190,12 +190,23 @@ router.get('/:id', async (req, res, next) => {
             let album = await Album.hasIdAlbum(song.id_album);
             let singers = await Song.getSingerSong(idSong);
             let types = await Song.getTypes(idSong);
-        
 
-            //let acc = await Account.selectId(idAccount);
-            song['account'] = acc;
+            delete song['id_account'];
+            delete song['id_album'];
+            
+
+            let singerSong = [];
+            for (let i = 0; i < singers.length; i++) {
+                let listSinger = await Account.selectId(singers[i].id_account);
+                singerSong.push(listSinger);
+            }
+
+            album['account'] = await Account.selectId(album.id_account);
+            delete album['id_account'];
+            
+            song['account'] = await Account.selectId(song.id_account);
             song['album'] = album;
-            song['singers'] = singers;
+            song['singers'] = singerSong;
             song['types'] = types;
 
             res.status(200).json({
@@ -348,7 +359,7 @@ router.patch('/listen/:id_song', async (req, res, next) => {
             await Song.autoListen(idSong, qtyListen + 1);
 
 
-            
+
 
             res.status(200).json({
                 message: 'Tăng lượt nghe thành công'
