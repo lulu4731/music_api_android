@@ -8,10 +8,21 @@ router.get('/count', Auth.authenGTUser, async (req, res, next) => {
         const id_account = Auth.getTokenData(req).id_account
         const count = await Notification.countUnreadNotification(id_account)
 
+        if(count === 0){
+            return res.status(200).json({
+                message: "Tài khoản của bạn không có thông báo mới",
+                data: count
+            })
+        }
+
         if (count) {
             return res.status(200).json({
                 message: 'Lấy số lượng thông báo chưa đọc',
                 data: count,
+            })
+        }else{
+            return res.status(400).json({
+                message: 'Lỗi không lấy được thông báo'
             })
         }
 
