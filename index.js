@@ -41,6 +41,8 @@ app.use((error, req, res, next) => {
     })
 });
 
+// Account
+app.use(`${apiUrl}/account`, require('./src/api/v0/router/account'));
 // Song
 app.use(`${apiUrl}/song`, require('./src/api/v0/router/song'));
 //Album
