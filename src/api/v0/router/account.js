@@ -39,26 +39,8 @@ router.post('/login', async (req, res, next) => {
 
         if (accountExists) {
 
-            const authorizationHeader = req.headers['authorization'];
-            let idUser = false;
-
-            if (authorizationHeader) {
-                const token = authorizationHeader.split(' ')[1];
-                if (!token) return res.sendStatus(401);
-
-                jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, data) => {
-                    if (err) {
-                        console.log(err);
-                        return res.sendStatus(401);
-                    }
-                })
-
-                idUser = Auth.getTokenData(req).id_account;
-            }
-
-            let result;
-            if (idUser === false) result = await Account.selectId(id);
-            else result = await Account.selectId(id, idUser);
+            let idUser = Auth.getUserID(req);
+            let result = await Account.selectId(id, idUser);
 
             res.status(200).json({
                 message: 'Đã tìm thấy tài khoản',
