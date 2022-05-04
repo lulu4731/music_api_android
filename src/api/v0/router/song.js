@@ -6,6 +6,7 @@ var Auth = require('../../../middleware/auth');
 var Type = require('../module/type');
 var Song = require('../module/song');
 var Album = require('../module/album');
+var Account = require('../module/account')
 
 var MyDrive = require('../../../../drive');
 const e = require('express');
@@ -174,21 +175,32 @@ router.get('/best-list', async (req, res, next) => {
 // Lấy thông tin bài hát theo id_song
 router.get('/:id', async (req, res, next) => {
     try {
-        const authorizationHeader = req.headers['authorization'];
-        //let acc = await Account.selectId(Auth.tokenData(req).id_account);
+        //const authorizationHeader = req.headers['authorization'];
+        // let acc = (await Account.selectId((await Auth.getTokenData(req)).id_account)).id_account;
+        // console.log(acc)
+
+        let idAccount = Auth.getTokenData(req).id_account;
+        let acc = await Account.selectId(idAccount);
 
         let idSong = req.params.id;
         let songExits = await Song.hasSong(idSong);
 
         if (songExits) {
-            let song = await Song.getSong(idSong, '1');
+            let song = await Song.getSong(idSong, idAccount);
+            let album = await Album.hasIdAlbum(song.id_album);
             let singers = await Song.getSingerSong(idSong);
             let types = await Song.getTypes(idSong);
+        
+
+            //let acc = await Account.selectId(idAccount);
+            song['account'] = acc;
+            song['album'] = album;
+            song['singers'] = singers;
+            song['types'] = types;
+
             res.status(200).json({
                 message: 'Lấy thông tin bài hát thành công',
-                data: song,
-                singers: singers,
-                types: types
+                data: song
             })
         }
         else {

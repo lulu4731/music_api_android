@@ -122,6 +122,16 @@ CREATE TABLE follow_account(
 	FOREIGN KEY (id_follower) REFERENCES account(id_account),
 	FOREIGN KEY (id_following) REFERENCES account(id_account)
 );
+
+CREATE TABLE listen (
+	id_song serial,
+	day date,
+	listenOfDay bigint,
+	
+	PRIMARY KEY(id_song, day),
+	
+	FOREIGN KEY (id_song) REFERENCES song(id_song),
+);
 	
 alter table song_type add FOREIGN KEY (id_song) REFERENCES song(id_song) ON DELETE CASCADE
 
