@@ -101,11 +101,7 @@ CREATE TABLE playlist(
 	FOREIGN KEY (id_account) REFERENCES account(id_account)
 );
 
-<<<<<<< HEAD
-CREATE TABLE playlist_song(
-=======
 CREATE TABLE song_type(
->>>>>>> main/phuc
 	id_playlist serial,
 	id_song serial NOT NULL,
 	playlist_song_time timestamp without time zone default timezone('Asia/Ho_Chi_Minh'::text, now()),
@@ -113,11 +109,7 @@ CREATE TABLE song_type(
 	PRIMARY KEY(id_playlist, id_song),
 
 	FOREIGN KEY (id_playlist) REFERENCES playlist(id_playlist),
-<<<<<<< HEAD
-	FOREIGN KEY (id_song) REFERENCES song(id_song)
-=======
 	FOREIGN KEY (id_song) REFERENCES song(id_song) ON DELETE ON DELETE CASCADE
->>>>>>> main/phuc
 );
 
 CREATE TABLE follow_account(
@@ -131,10 +123,13 @@ CREATE TABLE follow_account(
 	FOREIGN KEY (id_following) REFERENCES account(id_account)
 );
 <<<<<<< HEAD
+=======
+<<<<<<< HEAD
 <<<<<<< HEAD
 	
 =======
 =======
+>>>>>>> main/vinh
 
 CREATE TABLE listen (
 	id_song serial,
@@ -145,7 +140,10 @@ CREATE TABLE listen (
 	
 	FOREIGN KEY (id_song) REFERENCES song(id_song),
 );
+<<<<<<< HEAD
+=======
 >>>>>>> aca7922d2043c701d1e1ff52788f1294ae144fe9
+>>>>>>> main/vinh
 	
 alter table song_type add FOREIGN KEY (id_song) REFERENCES song(id_song) ON DELETE CASCADE
 

@@ -69,7 +69,7 @@ db.hasNameID = (id_playlist) => {
 
 db.findId_playlist = (id_account) => {
     return new Promise((resolve, reject) => {
-        pool.query("SELECT * FROM playlist WHERE id_account=$1", [id_account], (err, result) => {
+        pool.query("SELECT * FROM playlist WHERE id_account=$1 ORDER BY id_playlist DESC", [id_account], (err, result) => {
             if (err) return reject(err);
             return resolve(result.rows);
         })
@@ -90,7 +90,7 @@ db.countSongOfPlaylist = (id_playlist) => {
 db.listPlaylistAccount = (id_account, page = 0) => {
     if (page == 0) {
         return new Promise((resolve, reject) => {
-            pool.query("SELECT id_playlist, name_playlist, playlist_status FROM playlist WHERE id_account=$1",
+            pool.query("SELECT id_playlist, name_playlist, playlist_status FROM playlist WHERE id_account=$1 ORDER BY id_playlist DESC",
                 [id_account],
                 (err, result) => {
                     if (err) return reject(err)
@@ -99,7 +99,7 @@ db.listPlaylistAccount = (id_account, page = 0) => {
         })
     } else {
         return new Promise((resolve, reject) => {
-            pool.query(`SELECT id_playlist, name_playlist, playlist_status FROM playlist WHERE id_account=$1 LIMIT 10 OFFSET $2`,
+            pool.query(`SELECT id_playlist, name_playlist, playlist_status FROM playlist WHERE id_account=$1 ORDER BY id_playlist DESC LIMIT 10 OFFSET $2 `,
                 [id_account, (page - 1) * 10], (err, result) => {
                     if (err) return reject(err);
                     return resolve(result.rows);

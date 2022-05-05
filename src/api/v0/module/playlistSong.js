@@ -81,13 +81,24 @@ db.hasStatusPlaylist = (id_playlist) => {
 //     }
 // }
 
+// SELECT S.* FROM playlist PL 
+//             INNER JOIN playlist_song PLS ON PL.id_playlist = PLS.id_playlist
+//             INNER JOIN song S ON PLS.id_song = S.id_song 
+//             WHERE PL.id_playlist = $1 AND PL.playlist_status = 0 AND S.song_status = 0
+//             ORDER BY PLS.playlist_song_time DESC
+
+//             SELECT S.* FROM playlist PL 
+//             INNER JOIN playlist_song PLS ON PL.id_playlist = PLS.id_playlist
+//             INNER JOIN song S ON PLS.id_song = S.id_song 
+//             WHERE AND PL.id_playlist = $1 AND PL.playlist_status = 0 AND S.song_status = 0
+//             ORDER BY PLS.playlist_song_time DESC LIMIT 10 OFFSET $2
+
 db.listPlaylistSong = (id_playlist, page = 0) => {
     if (page == 0) {
         return new Promise((resolve, reject) => {
-            pool.query(`SELECT S.* FROM playlist PL 
-            INNER JOIN playlist_song PLS ON PL.id_playlist = PLS.id_playlist
-            INNER JOIN song S ON PLS.id_song = S.id_song 
-            WHERE PL.id_playlist = $1 AND PL.playlist_status = 0 AND S.song_status = 0
+            pool.query(`SELECT PLS.id_song FROM playlist_song PLS
+            INNER JOIN playlist PL ON PLS.id_playlist = PL.id_playlist
+            WHERE PL.id_playlist = $1
             ORDER BY PLS.playlist_song_time DESC`,
                 [id_playlist], (err, result) => {
                     if (err) return reject(err);
@@ -96,10 +107,9 @@ db.listPlaylistSong = (id_playlist, page = 0) => {
         })
     } else {
         return new Promise((resolve, reject) => {
-            pool.query(`SELECT S.* FROM playlist PL 
-            INNER JOIN playlist_song PLS ON PL.id_playlist = PLS.id_playlist
-            INNER JOIN song S ON PLS.id_song = S.id_song 
-            WHERE AND PL.id_playlist = $1 AND PL.playlist_status = 0 AND S.song_status = 0
+            pool.query(`SELECT PLS.id_song FROM playlist_song PLS
+            INNER JOIN playlist PL ON PLS.id_playlist = PL.id_playlist
+            WHERE PL.id_playlist = $1
             ORDER BY PLS.playlist_song_time DESC LIMIT 10 OFFSET $2`,
                 [id_playlist, (page - 1) * 10], (err, result) => {
                     if (err) return reject(err);

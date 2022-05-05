@@ -36,6 +36,18 @@ router.post('/', Auth.authenGTUser, async (req, res, next) => {
         let song = req.files.song;
         let image = req.files.img;
 
+        // if (song.size > 20 * 1024 * 1024) {
+        //     return res.status(400).json({
+        //         message: "Bài hát tải lên có dung lượng lớn hơn 20MB"
+        //     })
+        // }
+
+        // if (image.size > 20 * 1024 * 1024) {
+        //     return res.status(400).json({
+        //         message: "Ảnh tải lên có dung lượng lớn hơn 20MB"
+        //     })
+        // }
+
         if (!song) {
             return res.status(400).json({
                 message: 'Không có file bài hát được tải lên'
@@ -169,8 +181,33 @@ router.get('/type/:id', async (req, res, next) => {
 router.get('/best-list', async (req, res, next) => {
     try {
         let listBestSong = await Song.getBestSong();
-        res.status(200).json({
-            data: listBestSong,
+        let data = []
+        for(element of listBestSong){
+            let song = await getSong(element.id_song)
+            data.push(song)
+        }
+        return res.status(200).json({
+            data: data,
+        })
+    } catch (error) {
+        console.log(error);
+        res.sendStatus(500);
+    }
+})
+
+//Lấy danh sách mới nhất (theo trang)
+router.get('/new-list', async (req, res, next) => {
+    try {
+        let page = req.query.page
+        if(!page || page < 1) page = 1
+        let newestSongs = await Song.getListNewsetSong(page);
+        let data = []
+        for(element of newestSongs){
+            let song = await getSong(element.id_song)
+            data.push(song)
+        }
+        return res.status(200).json({
+            data: data,
         })
     } catch (error) {
         console.log(error);
