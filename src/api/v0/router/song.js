@@ -146,7 +146,7 @@ router.get('/type/:id', async (req, res, next) => {
         if (listExits.exist) {
             let data = []
             for(element of listExits.list){
-                let song = await getSongLite(element.id_song)
+                let song = await getSong(element.id_song)
                 data.push(song)
             }
             res.status(200).json({
@@ -178,26 +178,6 @@ router.get('/best-list', async (req, res, next) => {
     }
 })
 
-async function getSongLite(idSong) {
-    let song = await Song.getSong(idSong)
-    let singers = await Song.getSingerSong(idSong);
-    let album = await Album.hasIdAlbum(song.id_album);
-    let types = await Song.getTypes(idSong);
-
-    let singerSong = [];
-    for (let i = 0; i < singers.length; i++) {
-        let listSinger = await Account.selectIdLite(singers[i].id_account);
-        singerSong.push(listSinger);
-    }
-
-    song['account'] = await Account.selectIdLite(song.id_account)
-    song['singers'] = singerSong;
-    song['album'] = album;
-    song['types'] = types;
-
-    return song
-}
-
 async function getSong(idSong, idUser = -1){
     let song = await Song.getSong(idSong, idUser);
 
@@ -211,7 +191,7 @@ async function getSong(idSong, idUser = -1){
         singerSong.push(listSinger);
     }
 
-    // album['account'] = await Account.selectId(album.id_account);
+    album['account'] = await Account.selectId(album.id_account);
     delete album['id_account'];
             
     song['account'] = await Account.selectId(song.id_account);
@@ -228,40 +208,12 @@ async function getSong(idSong, idUser = -1){
 // Lấy thông tin bài hát theo id_song
 router.get('/:id', async (req, res, next) => {
     try {
-        //const authorizationHeader = req.headers['authorization'];
-        // let acc = (await Account.selectId((await Auth.getTokenData(req)).id_account)).id_account;
-        // console.log(acc)
-
         let idAccount = Auth.getUserID(req).id_account;
-        // let acc = await Account.selectId(idAccount);
 
         let idSong = req.params.id;
         let songExits = await Song.hasSong(idSong);
 
         if (songExits) {
-            // let song = await Song.getSong(idSong, idAccount);
-            // let album = await Album.hasIdAlbum(song.id_album);
-            // let singers = await Song.getSingerSong(idSong);
-            // let types = await Song.getTypes(idSong);
-
-            // delete song['id_account'];
-            // delete song['id_album'];
-            
-
-            // let singerSong = [];
-            // for (let i = 0; i < singers.length; i++) {
-            //     let listSinger = await Account.selectId(singers[i].id_account);
-            //     singerSong.push(listSinger);
-            // }
-
-            // album['account'] = await Account.selectId(album.id_account);
-            // delete album['id_account'];
-            
-            // song['account'] = await Account.selectId(song.id_account);
-            // song['album'] = album;
-            // song['singers'] = singerSong;
-            // song['types'] = types;
-
             let song = await getSong(idSong, idAccount)
 
             res.status(200).json({
