@@ -33,7 +33,7 @@ router.get('/:id_song/comment', async (req, res, next) => {
             }
 
             data.push({
-                id_account: account,
+                account: account,
                 id_cmt: listParent[i].id_cmt,
                 content: listParent[i].content,
                 day: listParent[i].day,
