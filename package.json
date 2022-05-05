@@ -21,10 +21,12 @@
     "firebase-admin": "^10.1.0",
     "googleapis": "^100.0.0",
     "jsonwebtoken": "^8.5.1",
-    "nodemon": "^2.0.15",
     "pg": "^8.7.3",
     "streamjs": "^1.6.4",
     "npm-watch": "^0.11.0",
     "swagger-ui-express": "^4.3.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.16"
   }
 }

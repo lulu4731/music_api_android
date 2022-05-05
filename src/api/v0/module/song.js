@@ -42,13 +42,13 @@ db.addSingerSong = (id_acc, id_song) => {
 //Lấy thông tin bài hát
 db.getSong = (id_song, idAccount) => {
     return new Promise((resolve, reject) => {
-        pool.query("SELECT  song.id_song, song.name_song, song.link, song.listen,song.image_song, count(love.id_song) as qtylove, account.account_name, album.name_album, song.created, exists(select 1 from love where love.id_account = $1) as lovestatus "
+        pool.query("SELECT  song.id_song, song.name_song, song.link, song.lyrics, song.listen,song.image_song, count(love.id_song) as qtylove,song.description,song.song_status, song.created, exists(select 1 from love where love.id_account = $1) as lovestatus, song.id_account, song.id_album "
             + "FROM(((song "
             + "LEFT JOIN love ON song.id_song = love.id_song) "
             + "INNER JOIN album ON song.id_album = album.id_album) "
             + "INNER JOIN account ON song.id_account = account.id_account) "
             + "WHERE song.id_song = $2 "
-            + "GROUP BY song.id_song, account.account_name, album.name_album",
+            + "GROUP BY song.id_song, account.account_name, album.name_album, account.id_account",
             [idAccount, id_song],
             (err, result) => {
                 if (err) return reject(err);
@@ -60,7 +60,7 @@ db.getSong = (id_song, idAccount) => {
 //Lấy danh sách ca sĩ của bài hát
 db.getSingerSong = (id_song) => {
     return new Promise((resolve, reject) => {
-        pool.query("SELECT account.account_name FROM singer_song INNER JOIN account ON singer_song.id_account = account.id_account WHERE id_song = $1",
+        pool.query("SELECT account.id_account, account.account_name FROM singer_song INNER JOIN account ON singer_song.id_account = account.id_account WHERE id_song = $1",
             [id_song],
             (err, result) => {
                 if (err) return reject(err);
@@ -72,7 +72,7 @@ db.getSingerSong = (id_song) => {
 //Lấy danh sách thể loại của bài hát
 db.getTypes = (id_song) => {
     return new Promise((resolve, reject) => {
-        pool.query("SELECT type.name_type FROM type INNER JOIN song_type ON type.id_type = song_type.id_type WHERE song_type.id_song = $1",
+        pool.query("SELECT type.id_type, type.name_type FROM type INNER JOIN song_type ON type.id_type = song_type.id_type WHERE song_type.id_song = $1",
             [id_song],
             (err, result) => {
                 if (err) return reject(err);
@@ -130,10 +130,11 @@ db.deleteSong = (id_song, idAccount) => {
 }
 
 //Lấy ds bài hát theo thể loại
-db.getListSongtype = (id_type) => {
+db.getListSongtype = (id_type, page) => {
     return new Promise((resolve, reject) => {
-        pool.query("SELECT song.* FROM song, song_type WHERE song.id_song = song_type.id_song AND song_type.id_type = $1 ORDER BY song.created DESC",
-            [id_type],
+        pool.query(`SELECT song.* FROM song, song_type WHERE song.id_song = song_type.id_song AND song_type.id_type = $1 ORDER BY song.created DESC 
+                LIMIT 10 OFFSET $2`,
+            [id_type, (page-1)*10],
             (err, result) => {
                 if (err) return reject(err);
                 return resolve({ list: result.rows, exist: result.rowCount > 0 });
@@ -156,7 +157,7 @@ db.getBestSong = () => {
 db.deleteSingerSong = (idSong, idAccount) => {
     return new Promise((resolve, reject) => {
         pool.query(`DELETE FROM singer_song WHERE id_song = $1 AND id_account = $2`,
-            [idSong,idAccount],
+            [idSong, idAccount],
             (err, result) => {
                 if (err) return reject(err);
                 return resolve(result.rowCount > 0);
@@ -192,6 +193,30 @@ db.deleteSingerSong = (idAccount, idSong) => {
     return new Promise((resolve, reject) => {
         pool.query("DELETE FROM singer_song WHERE id_song = $1 AND id_account = $2 ",
             [idSong, idAccount],
+            (err, result) => {
+                if (err) return reject(err);
+                return resolve(result.rowCount > 0);
+            })
+    })
+}
+
+//get listen
+db.getListen = (idSong) => {
+    return new Promise((resolve, reject) => {
+        pool.query(`SELECT listen FROM song WHERE id_song = $1 `,
+            [idSong],
+            (err, result) => {
+                if (err) return reject(err);
+                return resolve(result.rows[0]);
+            })
+    })
+}
+
+// Auto tăng lượt nghe
+db.autoListen = (idSong, listen) => {
+    return new Promise((resolve, reject) => {
+        pool.query(`UPDATE song SET listen = $2 WHERE id_song = $1`,
+            [idSong, listen],
             (err, result) => {
                 if (err) return reject(err);
                 return resolve(result.rowCount > 0);

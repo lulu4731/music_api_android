@@ -3,7 +3,8 @@ const router = express.Router()
 const Auth = require('../../../middleware/auth')
 const Playlist_Song = require('../module/playlistSong')
 const Playlist = require('../module/playList')
-
+const Account = require('../module/account')
+const Song = require('../module/song')
 
 router.post('/:id_playlist/song/:id_song', Auth.authenGTUser, async (req, res, next) => {
     try {
@@ -106,27 +107,35 @@ router.get('/:id_playlist', async (req, res, next) => {
     }
 })
 
-router.get('/', Auth.authenGTUser, async (req, res, next) => {
+router.get('/', async (req, res, next) => {
     try {
         const page = req.query.page
         const id_account = Auth.getTokenData(req).id_account
         const listPlaylist = await Playlist.findId_playlist(id_account)
-        let songId;
-        let data = [];
+        let songId
+        let data = []
+        const account = await Account.selectId(id_account)
+
         for (let i = 0; i < listPlaylist.length; i++) {
-            if (page) songId = await Playlist_Song.listPlaylistSong(id_account, listPlaylist[i].id_playlist, page);
-            else songId = await Playlist_Song.listPlaylistSong(id_account, listPlaylist[i].id_playlist);
+            let song = []
+            songId = await Playlist_Song.listPlaylistSong(listPlaylist[i].id_playlist, page)
+
+
+            for (let i = 0; i < songId.length; i++) {
+                song.push(await Song.getSong(songId[i].id_song, id_account))
+            }
 
             data.push({
                 id_playlist: listPlaylist[i].id_playlist,
                 name_playlist: listPlaylist[i].name_playlist,
                 playlist_status: listPlaylist[i].playlist_status,
-                song: songId
+                song: song
             })
         }
         return res.status(200).json({
             message: 'Lấy danh sách playlist thành công',
-            data: data
+            data: data,
+            account: account
         })
 
     } catch (error) {
