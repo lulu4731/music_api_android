@@ -37,11 +37,11 @@ db.hasLove = (idAccount, idSong) => {
 }
 
 // lấy danh sách bài hát mà bản thân yêu thích
-db.getListSong = (idAccount) => {
+db.getListSong = (idAccount, page) => {
     return new Promise((resolve, reject) => {
         pool.query(`SELECT song.* FROM love INNER JOIN song ON love.id_song = song.id_song
-                    WHERE love.id_account = $1`,
-            [idAccount],
+                    WHERE love.id_account = $1 LIMIT 20 OFFSET $2`,
+            [idAccount, (page-1)*20],
             (err, result) => {
                 if (err) return reject(err);
                 return resolve(result.rows);

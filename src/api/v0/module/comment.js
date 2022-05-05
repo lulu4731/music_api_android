@@ -81,7 +81,7 @@ db.delete = (id_cmt) => {
 
 db.listCommentParent = (id_song) => {
     return new Promise((resolve, reject) => {
-        pool.query("SELECT id_cmt, id_account, content, TO_CHAR(date_time:: date, 'dd/mm/yyyy') AS day, TO_CHAR(date_time:: time, 'hh24:mi') AS time FROM comment WHERE id_song = $1 and id_cmt_parent = 0 ORDER BY date_time",
+        pool.query("SELECT id_cmt, id_account, content, TO_CHAR(date_time:: date, 'dd/mm/yyyy') AS day, TO_CHAR(date_time:: time, 'hh24:mi') AS time FROM comment WHERE id_song = $1 and id_cmt_parent = 0 ORDER BY date_time DESC",
             [id_song],
             (err, result) => {
                 if (err) return reject(err);
@@ -103,7 +103,7 @@ db.listCommentParent = (id_song) => {
 
 db.listCommentChildren = (id_cmt, id_song) => {
     return new Promise((resolve, reject) => {
-        pool.query("SELECT id_cmt, id_account, content, TO_CHAR(date_time:: date, 'dd/mm/yyyy') AS day, TO_CHAR(date_time:: time, 'hh24:mi') AS time  FROM comment WHERE id_cmt_parent = $1 and id_song = $2",
+        pool.query("SELECT id_cmt, id_account, content, TO_CHAR(date_time:: date, 'dd/mm/yyyy') AS day, TO_CHAR(date_time:: time, 'hh24:mi') AS time  FROM comment WHERE id_cmt_parent = $1 and id_song = $2 ORDER BY date_time DESC",
             [id_cmt, id_song],
             (err, result) => {
                 if (err) return reject(err);

@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 var Account = require('../module/account');
 var Song = require('../module/song');
 var Love = require('../module/love')
+var Album = require('../module/album');
 var Auth = require('../../../middleware/auth');
 
 router.post('/follow/:id', Auth.authenGTUser, async (req, res, next) => {
@@ -73,10 +74,39 @@ router.delete('/unfollow/:id', Auth.authenGTUser, async (req, res, next) => {
     }
 });
 
+async function getSong(idSong, idUser = -1){
+    let song = await Song.getSong(idSong, idUser);
+
+    let album = await Album.hasIdAlbum(song.id_album);
+    let singers = await Song.getSingerSong(idSong);
+    let types = await Song.getTypes(idSong);
+
+    let singerSong = [];
+    for (let i = 0; i < singers.length; i++) {
+        let listSinger = await Account.selectId(singers[i].id_account);
+        singerSong.push(listSinger);
+    }
+
+    album['account'] = await Account.selectId(album.id_account);
+    delete album['id_account'];
+            
+    song['account'] = await Account.selectId(song.id_account);
+    song['album'] = album;
+    song['singers'] = singerSong;
+    song['types'] = types;
+
+    delete song['id_account'];
+    delete song['id_album'];
+
+    return song;
+}
+
 // Lấy danh sách bài hát mà bản thân yêu thích
 router.get('/love-song', Auth.authenGTUser, async (req, res, next) => {
     try {
         //let acc = await Account.selectId(Auth.tokenData(req).id_account);
+        let page = req.query.page
+        if(!page || page < 1) page = 1
         let acc = Auth.getTokenData(req).id_account;
 
 
@@ -87,11 +117,16 @@ router.get('/love-song', Auth.authenGTUser, async (req, res, next) => {
         //     })
         // }
 
-        let result = await Love.getListSong(acc);
+        let list = await Love.getListSong(acc, page);
+        let data = []
+        for(element of list){
+            let song = await getSong(element.id_song)
+            data.push(song)
+        }
 
-        res.status(200).json({
+        return res.status(200).json({
             message: 'Lấy danh sách thành công',
-            data: result
+            data: data
         })
 
     } catch (error) {
