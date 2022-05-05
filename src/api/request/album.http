@@ -27,3 +27,8 @@ PATCH   http://localhost:8000/api/v0/album/move/1/song/49
 Content-Type: application/json
 Authorization: beaer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZF9hY2NvdW50IjoiMSIsImlhdCI6MTY1MDkwMTA1NywiZXhwIjoxNjUxNzY1MDU3fQ.n4HVkrUeK9ULZGBtY0IdFt-7TPntebX4oKsolGPEKAQ
 
+### Lấy danh sách Album
+GET   http://localhost:8000/api/v0/album/list-song
+Content-Type: application/json
+Authorization: beaer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZF9hY2NvdW50IjoiMSIsImlhdCI6MTY1MDkwMTA1NywiZXhwIjoxNjUxNzY1MDU3fQ.n4HVkrUeK9ULZGBtY0IdFt-7TPntebX4oKsolGPEKAQ
+

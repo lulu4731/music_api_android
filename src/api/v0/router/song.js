@@ -6,6 +6,7 @@ var Auth = require('../../../middleware/auth');
 var Type = require('../module/type');
 var Song = require('../module/song');
 var Album = require('../module/album');
+var Account = require('../module/account')
 
 var MyDrive = require('../../../../drive');
 const e = require('express');
@@ -174,21 +175,43 @@ router.get('/best-list', async (req, res, next) => {
 // Lấy thông tin bài hát theo id_song
 router.get('/:id', async (req, res, next) => {
     try {
-        const authorizationHeader = req.headers['authorization'];
-        //let acc = await Account.selectId(Auth.tokenData(req).id_account);
+        //const authorizationHeader = req.headers['authorization'];
+        // let acc = (await Account.selectId((await Auth.getTokenData(req)).id_account)).id_account;
+        // console.log(acc)
+
+        let idAccount = Auth.getUserID(req).id_account;
+        let acc = await Account.selectId(idAccount);
 
         let idSong = req.params.id;
         let songExits = await Song.hasSong(idSong);
 
         if (songExits) {
-            let song = await Song.getSong(idSong, '1');
+            let song = await Song.getSong(idSong, idAccount);
+            let album = await Album.hasIdAlbum(song.id_album);
             let singers = await Song.getSingerSong(idSong);
             let types = await Song.getTypes(idSong);
+
+            delete song['id_account'];
+            delete song['id_album'];
+            
+
+            let singerSong = [];
+            for (let i = 0; i < singers.length; i++) {
+                let listSinger = await Account.selectId(singers[i].id_account);
+                singerSong.push(listSinger);
+            }
+
+            album['account'] = await Account.selectId(album.id_account);
+            delete album['id_account'];
+            
+            song['account'] = await Account.selectId(song.id_account);
+            song['album'] = album;
+            song['singers'] = singerSong;
+            song['types'] = types;
+
             res.status(200).json({
                 message: 'Lấy thông tin bài hát thành công',
-                data: song,
-                singers: singers,
-                types: types
+                data: song
             })
         }
         else {
@@ -315,6 +338,35 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
         }
         else {
             res.status(404).json({
+                message: 'Bài hát không tồn tại'
+            })
+        }
+    } catch (error) {
+        console.log(error);
+        res.sendStatus(500);
+    }
+})
+
+// tăng listen 
+router.patch('/listen/:id_song', async (req, res, next) => {
+    try {
+        let idSong = req.params.id_song;
+
+        let existSong = await Song.hasSong(idSong);
+        if (existSong) {
+            let qtyListen = (await Song.getListen(idSong)).listen;
+            console.log(qtyListen);
+            await Song.autoListen(idSong, qtyListen + 1);
+
+
+
+
+            res.status(200).json({
+                message: 'Tăng lượt nghe thành công'
+            })
+        }
+        else {
+            return res.status(404).json({
                 message: 'Bài hát không tồn tại'
             })
         }

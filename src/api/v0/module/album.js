@@ -85,6 +85,18 @@ db.hasIdAlbum = (idAlbum) => {
     })
 }
 
+//Lấy danh sách album của bản thân
+db.getListAlbum = (idAccount) => {
+    return new Promise((resolve, reject) => {
+        pool.query(`SELECT album.* FROM album INNER JOIN account ON album.id_account = account.id_account
+                    WHERE account.id_account = $1 ORDER BY album.create_date DESC`,
+            [idAccount],
+            (err, result) => {
+                if (err) return reject(err);
+                return resolve(result.rows);
+            })
+    })
+}
 
 
 
