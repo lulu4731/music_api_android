@@ -98,7 +98,19 @@ db.getListAlbum = (idAccount) => {
     })
 }
 
-db.list = (id_account, page = 0) =>{
+//Lấy số lượng bài hát thuộc album
+db.countSongOfAlbum = (idAlbum) => {
+    return new Promise((resolve, reject) => {
+        pool.query(`SELECT COUNT(*) as cnt FROM song WHERE id_album=$1`,
+            [idAlbum],
+            (err, result) => {
+                if (err) return reject(err);
+                return resolve(result.rows[0]);
+            })
+    })
+}
+
+db.list = (id_account, page = 0) => {
     if (page == 0) {
         return new Promise((resolve, reject) => {
             pool.query(`SELECT *
@@ -139,12 +151,60 @@ db.selectSongsOfAlbum = (id, page = 0) => {
             pool.query(`SELECT *
             FROM Song
             WHERE id_album = $1 AND song_status = 0 LIMIT 10 OFFSET $2`,
-                [id , (page - 1) * 10], (err, result) => {
+                [id, (page - 1) * 10], (err, result) => {
                     if (err) return reject(err);
                     return resolve(result.rows);
                 })
         })
     }
+}
+
+// Lấy tất cả bài hát (cả ẩn) của album
+// Sử dụng khi lấy album của bản thân
+db.getAllSongsOfAlbum = (idAlbum) => {
+    return new Promise((resolve, reject) => {
+        pool.query(`SELECT id_song
+            FROM Song
+            WHERE id_album = $1`,
+            [idAlbum], (err, result) => {
+                if (err) return reject(err);
+                return resolve(result.rows);
+            })
+    })
+}
+
+// Lấy tất cả bài hát (cả ẩn) của album
+// Sử dụng khi lấy album của bản thân
+db.getPublicSongsOfAlbum = (idAlbum) => {
+    return new Promise((resolve, reject) => {
+        pool.query(`SELECT id_song
+            FROM Song
+            WHERE id_album = $1 and song_status = 0`,
+            [idAlbum], (err, result) => {
+                if (err) return reject(err);
+                return resolve(result.rows);
+            })
+    })
+}
+
+db.has = (idAlbum) => {
+    return new Promise((resolve, reject) => {
+        pool.query(`SELECT * from album where id_album = $1`,
+            [idAlbum], (err, result) => {
+                if (err) return reject(err);
+                return resolve(result.rowCount > 0);
+            })
+    })
+}
+
+db.selectId = (idAlbum) => {
+    return new Promise((resolve, reject) => {
+        pool.query(`SELECT * from album where id_album = $1`,
+            [idAlbum], (err, result) => {
+                if (err) return reject(err);
+                return resolve(result.rows[0]);
+            })
+    })
 }
 
 module.exports = db;
