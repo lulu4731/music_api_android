@@ -122,6 +122,14 @@ CREATE TABLE follow_account(
 	FOREIGN KEY (id_follower) REFERENCES account(id_account),
 	FOREIGN KEY (id_following) REFERENCES account(id_account)
 );
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+	
+=======
+=======
+>>>>>>> main/vinh
 
 CREATE TABLE listen (
 	id_song serial,
@@ -132,6 +140,10 @@ CREATE TABLE listen (
 	
 	FOREIGN KEY (id_song) REFERENCES song(id_song),
 );
+<<<<<<< HEAD
+=======
+>>>>>>> aca7922d2043c701d1e1ff52788f1294ae144fe9
+>>>>>>> main/vinh
 	
 alter table song_type add FOREIGN KEY (id_song) REFERENCES song(id_song) ON DELETE CASCADE
 

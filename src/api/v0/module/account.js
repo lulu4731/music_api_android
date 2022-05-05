@@ -34,4 +34,17 @@ db.selectId = (idAccount, idUser = -1) => {
     })
 }
 
+db.selectIdLite = (idAccount) => {
+    return new Promise((resolve, reject) => {
+        pool.query(`SELECT A.id_account, A.account_name, A.avatar, A.email, A.create_date, A.account_status, A.role
+        FROM account A
+        WHERE A.id_account = $1`,
+            [idAccount],
+            (err, result) => {
+                if (err) return reject(err);
+                return resolve(result.rows[0]);
+            })
+    })
+}
+
 module.exports = db

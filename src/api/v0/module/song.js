@@ -42,7 +42,7 @@ db.addSingerSong = (id_acc, id_song) => {
 //Lấy thông tin bài hát
 db.getSong = (id_song, idAccount) => {
     return new Promise((resolve, reject) => {
-        pool.query("SELECT  song.id_song, song.name_song, song.link, song.listen,song.image_song, count(love.id_song) as qtylove,song.description,song.song_status, song.created, exists(select 1 from love where love.id_account = $1) as lovestatus, song.id_account, song.id_album "
+        pool.query("SELECT  song.id_song, song.name_song, song.link, song.lyrics, song.listen,song.image_song, count(love.id_song) as qtylove,song.description,song.song_status, song.created, exists(select 1 from love where love.id_account = $1) as lovestatus, song.id_account, song.id_album "
             + "FROM(((song "
             + "LEFT JOIN love ON song.id_song = love.id_song) "
             + "INNER JOIN album ON song.id_album = album.id_album) "
@@ -130,10 +130,11 @@ db.deleteSong = (id_song, idAccount) => {
 }
 
 //Lấy ds bài hát theo thể loại
-db.getListSongtype = (id_type) => {
+db.getListSongtype = (id_type, page) => {
     return new Promise((resolve, reject) => {
-        pool.query("SELECT song.* FROM song, song_type WHERE song.id_song = song_type.id_song AND song_type.id_type = $1 ORDER BY song.created DESC",
-            [id_type],
+        pool.query(`SELECT song.* FROM song, song_type WHERE song.id_song = song_type.id_song AND song_type.id_type = $1 ORDER BY song.created DESC 
+                LIMIT 10 OFFSET $2`,
+            [id_type, (page-1)*10],
             (err, result) => {
                 if (err) return reject(err);
                 return resolve({ list: result.rows, exist: result.rowCount > 0 });
