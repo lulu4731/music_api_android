@@ -133,7 +133,7 @@ db.deleteSong = (id_song, idAccount) => {
 db.getListSongtype = (id_type, page) => {
     return new Promise((resolve, reject) => {
         pool.query(`SELECT song.* FROM song, song_type WHERE song.id_song = song_type.id_song AND song_type.id_type = $1 ORDER BY song.created DESC 
-                LIMIT 10 OFFSET $2`,
+                LIMIT 20 OFFSET $2`,
             [id_type, (page-1)*20],
             (err, result) => {
                 if (err) return reject(err);
