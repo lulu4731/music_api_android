@@ -5,6 +5,7 @@ const Playlist_Song = require('../module/playlistSong')
 const Playlist = require('../module/playList')
 const Account = require('../module/account')
 const Song = require('../module/song')
+const { composer } = require('googleapis/build/src/apis/composer')
 
 router.post('/:id_playlist/song/:id_song', Auth.authenGTUser, async (req, res, next) => {
     try {
@@ -79,7 +80,38 @@ router.delete('/:id_playlist/song/:id_song', Auth.authenGTUser, async (req, res,
         return res.sendStatus(500)
     }
 })
+router.get('/prominent', async (req, res, next) => {
+    try {
+        const listPlaylist = await Playlist_Song.listPlaylistTotalListenSong()
+        let songId
+        let data = []
 
+        for (let i = 0; i < listPlaylist.length; i++) {
+            let song = []
+            songId = await Playlist_Song.listPlaylistSong(listPlaylist[i].id_playlist)
+
+            for (let i = 0; i < songId.length; i++) {
+                song.push(await Song.getSong(songId[i].id_song))
+            }
+
+            data.push({
+                id_playlist: listPlaylist[i].id_playlist,
+                name_playlist: listPlaylist[i].name_playlist,
+                playlist_status: listPlaylist[i].playlist_status,
+                total_listen: +listPlaylist[i].total_listen,
+                song: song
+            })
+        }
+        return res.status(200).json({
+            message: 'Lấy danh sách 10 playlist nổi bật có tổng lượt nghe các bài hát cao nhất thành công',
+            data: data
+        })
+
+    } catch (error) {
+        console.log(error)
+        res.sendStatus(500)
+    }
+})
 router.get('/:id_playlist', async (req, res, next) => {
     let page = req.query.page
     // const id_account = Auth.getTokenData(req).id_account
@@ -88,26 +120,36 @@ router.get('/:id_playlist', async (req, res, next) => {
     try {
         const listPlaylistSong = await Playlist_Song.listPlaylistSong(id_playlist, page)
         const playlistExist = await Playlist_Song.hasStatusPlaylist(id_playlist)
+        const playlist = await Playlist.getPlaylist(id_playlist)
 
-        if (!playlistExist) {
+        if (playlistExist) {
             return res.status(400).json({
                 message: "Playlist chưa công khai",
             })
         }
 
-        if (listPlaylistSong) {
-            return res.status(200).json({
-                message: "Lấy danh sách bài hát công khai trong 1 playlist công khai thành công",
-                data: listPlaylistSong
-            })
+        let song = []
+
+        for (let i = 0; i < listPlaylistSong.length; i++) {
+            song.push(await Song.getSong(listPlaylistSong[i].id_song))
         }
+
+        return res.status(200).json({
+            message: "Lấy danh sách bài hát công khai trong 1 playlist công khai thành công",
+            data: {
+                id_playlist: playlist.id_playlist,
+                name_playlist: playlist.name_playlist,
+                playlist_status: playlist.playlist_status,
+                song: song
+            }
+        })
     } catch (error) {
         console.log(error)
         res.sendStatus(500)
     }
 })
 
-router.get('/', async (req, res, next) => {
+router.get('/', Auth.authenGTUser, async (req, res, next) => {
     try {
         const page = req.query.page
         const id_account = Auth.getTokenData(req).id_account
