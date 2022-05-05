@@ -146,7 +146,7 @@ router.get('/type/:id', async (req, res, next) => {
         if (listExits.exist) {
             let data = []
             for(element of listExits.list){
-                let song = await getSongLite(element.id_song)
+                let song = await getSong(element.id_song)
                 data.push(song)
             }
             res.status(200).json({
