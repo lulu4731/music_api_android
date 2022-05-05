@@ -5,6 +5,7 @@ const Playlist_Song = require('../module/playlistSong')
 const Comment = require('../module/comment')
 const Notification = require('../module/notification')
 const sendNotification = require('../../../firebaseConfig/sendNotification')
+const Account = require('../module/account')
 
 router.get('/:id_song/comment', async (req, res, next) => {
     const id_song = req.params.id_song
@@ -14,14 +15,30 @@ router.get('/:id_song/comment', async (req, res, next) => {
     if (songExists) {
         const listParent = await Comment.listCommentParent(id_song)
         for (let i = 0; i < listParent.length; i++) {
+            let commentChildren = []
             const listChildren = await Comment.listCommentChildren(listParent[i].id_cmt, id_song)
+            const account = await Account.selectId(listParent[i].id_account)
+            if (listChildren.length > 0) {
+                for (let i = 0; i < listChildren.length; i++) {
+                    const account = await Account.selectId(listChildren[i].id_account)
+
+                    commentChildren.push({
+                        account: account,
+                        id_cmt: listChildren[i].id_cmt,
+                        content: listChildren[i].content,
+                        day: listChildren[i].day,
+                        time: listChildren[i].time,
+                    })
+                }
+            }
+
             data.push({
-                id_account: listParent[i].id_account,
+                id_account: account,
                 id_cmt: listParent[i].id_cmt,
                 content: listParent[i].content,
                 day: listParent[i].day,
                 time: listParent[i].time,
-                commentChildren: listChildren
+                commentChildren: commentChildren
             })
         }
 
