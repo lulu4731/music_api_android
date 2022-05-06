@@ -201,9 +201,11 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
  * @permission  Ai cũng có thể
  * @return      200: Thành công, trả về số lượng + id các bài viết đã bookmark của tài khoản này
  *              404: Tài khoản không tồn tại
+ * OKKKKKKKKKKKKKKKKKK
  */
  router.get('/:id/album', async (req, res, next) => {
     try {
+        let idAccount = Auth.getUserID(req).id_account;
         let id = req.params.id;
         let page = req.query.page;
 
@@ -215,13 +217,40 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
 
             let data = [];
             for (let i = 0; i < albumId.length; i++) {
-                let album = await Album.hasIdAlbum(albumsId[i].id_album);
+
+                let album = await Album.hasIdAlbum(albumId[i].id_album);
+                
+
                 let acc = await Account.selectId(album.id_account);
-                let songs = await Album.selectSongsOfAlbum(albumsId[i].id_album);
+
+                let songs = await Album.selectSongsOfAlbum(albumId[i].id_album);
+                
+                let listSong = [];  
+                for (let j = 0; j < songs.length; j++) {
+                    let song = await Song.getSong(songs[j].id_song, idAccount);
+                    let singers = await Song.getSingerSong(songs[j].id_song);
+                    let types = await Song.getTypes(songs[j].id_song);
+
+                    
+
+                    let singerSong = [];
+                    for (let y = 0; y < singers.length; y++) {
+                        let listSinger = await Account.selectId(singers[y].id_account);
+                        singerSong.push(listSinger);
+                    }
+
+                    song['account'] = await Account.selectId(song.id_account);
+                    song['singers'] = singerSong;
+                    song['types'] = types;
+                    delete song['id_account'];
+                    delete song['id_album'];
+                    listSong.push(song);
+                }
+                delete album['id_account'];
+                album['account'] = acc;
+                album['songs'] = listSong;
                 data.push({
-                    album: album,
-                    author: acc,
-                    songs: songs
+                    album: album
                 });
             }
 
@@ -246,6 +275,7 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
  * @permisson   Ai cũng có thể thực thi
  * @return      200: Thành công, trả về các bài viết public, đã kiểm duyệt của tài khoản
  *              404: Tài khoản không tồn tại
+ * OKKKKKKKKKKKKKKKKKKK
  */
  router.get('/:id/songs', async (req, res, next) => {
     try {
@@ -255,19 +285,35 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
         let accExists = await Account.has(idAcc);
         if (accExists) {
             let acc = await Account.selectId(idAcc);
-
-
-
             let songsId;
-            if(page) songsId = await Song.getListSongIdPublicOfAccount(idAcc, page);
+            if (page) songsId = await Song.getListSongIdPublicOfAccount(idAcc, page);
             else songsId = await Song.getListSongIdPublicOfAccount(idAcc);
 
             let data = [];
-            for (let i = 0; i < postsId.length; i++) {
-                let song = await song.getSong(songsId[i].id_song, idAcc);
+            for (let i = 0; i < songsId.length; i++) {
+                let song = await Song.getSong(songsId[i].id_song, idAcc);
+                let album = await Album.hasIdAlbum(song.id_album);
+                let singers = await Song.getSingerSong(songsId[i].id_song);
+                let types = await Song.getTypes(songsId[i].id_song);
+
+
+                let singerSong = [];
+                for (let i = 0; i < singers.length; i++) {
+                    let listSinger = await Account.selectId(singers[i].id_account);
+                    singerSong.push(listSinger);
+                }
+
+                album['account'] = await Account.selectId(album.id_account);
+                delete album['id_account'];
+                
+                song['account'] = await Account.selectId(song.id_account);
+                song['album'] = album;
+                song['singers'] = singerSong;
+                song['types'] = types;
+                delete song['id_account'];
+                delete song['id_album'];
                 data.push({
-                    post: post,
-                    author: acc
+                    song: song
                 });
             }
             res.status(200).json({
@@ -279,6 +325,7 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
                 message: 'Tài khoản không tồn tại'
             })
         }
+
 
     } catch (error) {
         console.log(error);
@@ -304,9 +351,10 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
 
             let data = [];
             for (let i = 0; i < postsId.length; i++) {
-                let song = await song.getSong(songsId[i].id_song, acc);
+                let song = await Song.getSong(songsId[i].id_song, acc);
+
                 data.push({
-                    post: post,
+                    song: song,
                     author: acc
                 });
             }
@@ -328,9 +376,11 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
  * @permisson   mọi người
  * @return      200: Thành công, trả về các bài viết public, đã kiểm duyệt của tài khoản
  *              404: Tài khoản không tồn tại
+ * OKKKKKKKKKKKKKKKK
  */
  router.get('/:id/playlist', async (req, res, next) => {
     try {
+        let idAccount = Auth.getUserID(req).id_account;
         let idAcc = req.params.id;
         let page = req.query.page;
 
@@ -339,28 +389,56 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
             let acc = await Account.selectId(idAcc);
 
             let playlists;
-            if(page) playlists = await PlayList.listPlaylistAccount(idAcc, page);
+            if (page) playlists = await PlayList.listPlaylistAccount(idAcc, page);
             else playlists = await PlayList.listPlaylistAccount(idAcc);
 
-            // let data = [];
-            // for (let i = 0; i < playListsId.length; i++) {
-            //     if(playlistsId[i].playlist_status === 0){
-            //         let playList = await PlayList.has(playlistsId[i].id_playlist);
+            let data = [];
+            for (let i = 0; i < playlists.length; i++) {
+                if(playlists[i].playlist_status === 0){
+                    let playList = await PlayList.getPlaylist(playlists[i].id_playlist); 
+                    let songs = await PlaylistSong.listPlaylistSong(playList.id_playlist);
+                    
+                    let songList =[];
+                    for(let j=0; j< songs.length; j++){
+                        let song = await Song.getSong(songs[j].id_song, idAccount);
+                        let album = await Album.hasIdAlbum(song.id_album);
+                        let singers = await Song.getSingerSong(song.id_song);
+                        let types = await Song.getTypes(song.id_song);
 
-            //         data.push({
-            //             playList: playList
-            //         });
-            //     }
-                
-            // }
 
-            if(playlists){
-                res.status(200).json({
-                    message: 'Lấy danh sách các bài hát của tài khoản thành công',
-                    data: playlists
-                })
+                        let singerSong = [];
+                        for (let y = 0; y < singers.length; y++) {
+                            let listSinger = await Account.selectId(singers[y].id_account);
+                            singerSong.push(listSinger);
+                        }
+
+                        album['account'] = await Account.selectId(album.id_account);
+                        delete album['id_account'];
+                        
+                        song['account'] = await Account.selectId(song.id_account);
+                        song['album'] = album;
+                        song['singers'] = singerSong;
+                        song['types'] = types;
+                        delete song['id_account'];
+                        delete song['id_album'];
+                        songList.push({
+                            song: song
+                        });;
+
+                    }
+                    playList['Songs'] = songList;
+                    playList['account'] = acc;
+                    data.push({
+                        playList: playList
+                    });
+                }
+
             }
-            
+            res.status(200).json({
+                message: 'Lấy danh sách các playlist của tài khoản thành công',
+                data: data
+            })
+        
         } else {
             res.status(404).json({
                 message: 'Tài khoản không tồn tại'

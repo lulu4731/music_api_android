@@ -70,8 +70,8 @@ app.post(`${apiUrl}/a/add`, async (req, res) => {
 //playlist
 app.use(`${apiUrl}/playlist`, require('./src/api/v0/router/playList'))
 app.use(`${apiUrl}/playlist_song`, require('./src/api/v0/router/playlistSong'))
-// app.use(`${apiUrl}/song`, require('./src/api/v0/router/song'))
-app.use(`${apiUrl}/song`, require('./src/api/v0/router/comment'))
+app.use(`${apiUrl}/song`, require('./src/api/v0/router/song'))
+app.use(`${apiUrl}/comment`, require('./src/api/v0/router/comment'))
 app.use(`${apiUrl}/notification`, require('./src/api/v0/router/notification'))
 app.use(`${apiUrl}/account-device`, require('./src/api/v0/router/account_device'))
 app.use(`${apiUrl}/search`, require('./src/api/v0/router/search'))
