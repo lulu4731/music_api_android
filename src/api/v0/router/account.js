@@ -2,11 +2,12 @@ const express = require('express')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcryptjs')
 const router = express.Router()
-var Auth = require('../../../middleware/auth');
+const Auth = require('../../../middleware/auth');
 const Account = require('../module/account')
 const Album = require('../module/album');
 const Song = require('../module/song');
 const PlayList = require('../module/playList');
+const PlaylistSong = require('../module/playlistSong');
 
 /**
  * Đăng nhập
@@ -32,9 +33,10 @@ router.post('/login', async (req, res, next) => {
 
         if (exist) {
             let acc = await Account.selectByEmail(email);
-            let match = await bcrypt.compare(password, acc.password);
-
-            if (match) {
+            // let match = await bcrypt.compare(password, acc.password);
+            // console.log(match);
+            // console.log(acc.password);
+            if (password === acc.password) {
                 var data = {
                     "id_account": acc.id_account,
                     "role": acc.role,
@@ -42,7 +44,7 @@ router.post('/login', async (req, res, next) => {
                     "account_status": acc.account_status,
                 }
                 // let days_token = await Information.selectToken();
-                const accessToken = jwt.sign(data, process.env.ACCESS_TOKEN_SECRET, { expiresIn: `3d` });
+                const accessToken = jwt.sign(data, process.env.ACCESS_TOKEN_SECRET, { expiresIn: `24d` });
 
                 return res.status(200).json({
                     message: 'đăng nhập thành công',
@@ -51,12 +53,12 @@ router.post('/login', async (req, res, next) => {
                 });
             } else {
                 return res.status(400).json({
-                    message: 'Mật khẩu hoặc tài khoản không đúng'
+                    message: 'Mật khẩu hoặc tài khoản không đúng1'
                 });
             }
         } else {
             return res.status(400).json({
-                message: 'Mật khẩu hoặc tài khoản không đúng',
+                message: 'Mật khẩu hoặc tài khoản không đúng2',
             });
         }
 
@@ -85,6 +87,61 @@ router.get('/information', Auth.authenGTUser, async (req, res, next) => {
         return res.sendStatus(500);
     }
 })
+/**
+ * Lấy tất cả bài hát của bản thân
+ * @permisson   chỉ bản thân
+ * @return      200: Thành công, trả về các bài viết public, đã kiểm duyệt của tài khoản
+ *              404: Tài khoản không tồn tại
+ */
+ router.get('/songs', Auth.authenGTUser, async (req, res, next) => {
+    try {
+            let idAcc = Auth.getTokenData(req).id_account;
+            let acc = await Account.selectId(idAcc);
+            let page = req.query.page;
+
+            let songsId;
+            if(page) songsId = await Song.getListSongIdOfAccount(idAcc, page);
+            else songsId = await Song.getListSongIdOfAccount(idAcc);
+
+            let data = [];
+            for (let i = 0; i < songsId.length; i++) {
+                let song = await Song.getSong(songsId[i].id_song, idAcc);
+                let album = await Album.hasIdAlbum(song.id_album);
+                let singers = await Song.getSingerSong(songsId[i].id_song);
+                let types = await Song.getTypes(songsId[i].id_song);
+
+
+                let singerSong = [];
+                for (let i = 0; i < singers.length; i++) {
+                    let listSinger = await Account.selectId(singers[i].id_account);
+                    singerSong.push(listSinger);
+                }
+
+                album['account'] = await Account.selectId(album.id_account);
+                delete album['id_account'];
+                
+                song['account'] = await Account.selectId(song.id_account);
+                song['album'] = album;
+                song['singers'] = singerSong;
+                song['types'] = types;
+                delete song['id_account'];
+                delete song['id_album'];
+                data.push({
+                    song: song
+                });
+            }
+            res.status(200).json({
+                message: 'Lấy danh sách các bài hát của tài khoản thành công',
+                data: data
+            })
+ 
+
+    } catch (error) {
+         console.log(error);
+         res.sendStatus(500);
+    }
+})
+
 
 /**
  * Lấy thông tin 1 tài khoản theo id
@@ -186,6 +243,7 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
  */
 router.get('/:id/album', async (req, res, next) => {
     try {
+        let idAccount = Auth.getUserID(req).id_account;
         let id = req.params.id;
         let page = req.query.page;
 
@@ -197,13 +255,40 @@ router.get('/:id/album', async (req, res, next) => {
 
             let data = [];
             for (let i = 0; i < albumId.length; i++) {
+
                 let album = await Album.hasIdAlbum(albumId[i].id_album);
+                
+
                 let acc = await Account.selectId(album.id_account);
+
                 let songs = await Album.selectSongsOfAlbum(albumId[i].id_album);
+                
+                let listSong = [];  
+                for (let j = 0; j < songs.length; j++) {
+                    let song = await Song.getSong(songs[j].id_song, idAccount);
+                    let singers = await Song.getSingerSong(songs[j].id_song);
+                    let types = await Song.getTypes(songs[j].id_song);
+
+                    
+
+                    let singerSong = [];
+                    for (let y = 0; y < singers.length; y++) {
+                        let listSinger = await Account.selectId(singers[y].id_account);
+                        singerSong.push(listSinger);
+                    }
+
+                    song['account'] = await Account.selectId(song.id_account);
+                    song['singers'] = singerSong;
+                    song['types'] = types;
+                    delete song['id_account'];
+                    delete song['id_album'];
+                    listSong.push(song);
+                }
+                delete album['id_account'];
+                album['account'] = acc;
+                album['songs'] = listSong;
                 data.push({
-                    album: album,
-                    author: acc,
-                    songs: songs
+                    album: album
                 });
             }
 
@@ -231,23 +316,42 @@ router.get('/:id/album', async (req, res, next) => {
  */
 router.get('/:id/songs', async (req, res, next) => {
     try {
+        let idAccount = Auth.getUserID(req).id_account;
         let idAcc = req.params.id;
         let page = req.query.page;
 
         let accExists = await Account.has(idAcc);
         if (accExists) {
             let acc = await Account.selectId(idAcc);
-
             let songsId;
             if (page) songsId = await Song.getListSongIdPublicOfAccount(idAcc, page);
             else songsId = await Song.getListSongIdPublicOfAccount(idAcc);
 
             let data = [];
             for (let i = 0; i < songsId.length; i++) {
-                let song = await Song.getSong(songsId[i].id_song, idAcc);
+                let song = await Song.getSong(songsId[i].id_song, idAccount);
+                let album = await Album.hasIdAlbum(song.id_album);
+                let singers = await Song.getSingerSong(songsId[i].id_song);
+                let types = await Song.getTypes(songsId[i].id_song);
+
+
+                let singerSong = [];
+                for (let j = 0; j < singers.length;j++) {
+                    let listSinger = await Account.selectId(singers[j].id_account);
+                    singerSong.push(listSinger);
+                }
+
+                album['account'] = await Account.selectId(album.id_account);
+                delete album['id_account'];
+                
+                song['account'] = await Account.selectId(song.id_account);
+                song['album'] = album;
+                song['singers'] = singerSong;
+                song['types'] = types;
+                delete song['id_account'];
+                delete song['id_album'];
                 data.push({
-                    song: song,
-                    author: acc
+                    song: song
                 });
             }
             res.status(200).json({
@@ -267,40 +371,6 @@ router.get('/:id/songs', async (req, res, next) => {
 })
 
 
-/**
- * Lấy tất cả bài hát của bản thân
- * @permisson   chỉ bản thân
- * @return      200: Thành công, trả về các bài viết public, đã kiểm duyệt của tài khoản
- *              404: Tài khoản không tồn tại
- */
-router.get('/songs', Auth.authenGTUser, async (req, res, next) => {
-    try {
-        let acc = await Account.selectId(Auth.getTokenData(req).id_account);
-        let page = req.query.page;
-
-        let songsId;
-        if (page) songsId = await Song.getListSongIdOfAccount(Auth.getTokenData(req).id_account, page);
-        else songsId = await Song.getListSongIdOfAccount(Auth.getTokenData(req).id_account);
-
-        let data = [];
-        for (let i = 0; i < songsId.length; i++) {
-            let song = await Song.getSong(songsId[i].id_song, acc);
-            data.push({
-                song: song,
-                author: acc
-            });
-        }
-        res.status(200).json({
-            message: 'Lấy danh sách các bài hát của tài khoản thành công',
-            data: data
-        })
-
-
-    } catch (error) {
-        console.log(error);
-        res.sendStatus(500);
-    }
-})
 
 
 /**
@@ -311,6 +381,7 @@ router.get('/songs', Auth.authenGTUser, async (req, res, next) => {
  */
 router.get('/:id/playlist', async (req, res, next) => {
     try {
+        let idAccount = Auth.getUserID(req).id_account;
         let idAcc = req.params.id;
         let page = req.query.page;
 
@@ -322,31 +393,58 @@ router.get('/:id/playlist', async (req, res, next) => {
             if (page) playlists = await PlayList.listPlaylistAccount(idAcc, page);
             else playlists = await PlayList.listPlaylistAccount(idAcc);
 
-            // let data = [];
-            // for (let i = 0; i < playListsId.length; i++) {
-            //     if(playlistsId[i].playlist_status === 0){
-            //         let playList = await PlayList.has(playlistsId[i].id_playlist);
+            let data = [];
+            for (let i = 0; i < playlists.length; i++) {
+                if(playlists[i].playlist_status === 0){
+                    let playList = await PlayList.getPlaylist(playlists[i].id_playlist); 
+                    let songs = await PlaylistSong.listPlaylistSong(playList.id_playlist);
+                    
+                    let songList =[];
+                    for(let j=0; j< songs.length; j++){
+                        let song = await Song.getSong(songs[j].id_song, idAccount);
+                        let album = await Album.hasIdAlbum(song.id_album);
+                        let singers = await Song.getSingerSong(song.id_song);
+                        let types = await Song.getTypes(song.id_song);
 
-            //         data.push({
-            //             playList: playList
-            //         });
-            //     }
 
-            // }
+                        let singerSong = [];
+                        for (let y = 0; y < singers.length; y++) {
+                            let listSinger = await Account.selectId(singers[y].id_account);
+                            singerSong.push(listSinger);
+                        }
 
-            if (playlists) {
-                res.status(200).json({
-                    message: 'Lấy danh sách các bài hát của tài khoản thành công',
-                    data: playlists
-                })
+                        album['account'] = await Account.selectId(album.id_account);
+                        delete album['id_account'];
+                        
+                        song['account'] = await Account.selectId(song.id_account);
+                        song['album'] = album;
+                        song['singers'] = singerSong;
+                        song['types'] = types;
+                        delete song['id_account'];
+                        delete song['id_album'];
+                        songList.push({
+                            song: song
+                        });;
+
+                    }
+                    playList['Songs'] = songList;
+                    playList['account'] = acc;
+                    data.push({
+                        playList: playList
+                    });
+                }
+
             }
-
+            res.status(200).json({
+                message: 'Lấy danh sách các playlist của tài khoản thành công',
+                data: data
+            })
+        
         } else {
             res.status(404).json({
                 message: 'Tài khoản không tồn tại'
             })
         }
-
     } catch (error) {
         console.log(error);
         res.sendStatus(500);
@@ -417,7 +515,7 @@ router.put('/change/password', Auth.authenGTUser, async (req, res, next) => {
  *              401: Authorization header không có token
  *              403: token không chính xác hoặc đã hết hạn
  */
-router.get('/search', async (req, res, next) => {
+router.get('/', async (req, res, next) => {
     try {
         let { k } = req.query;
         if (!k || k.trim().length == 0) {
@@ -427,6 +525,7 @@ router.get('/search', async (req, res, next) => {
         }
 
         k = k.toLowerCase();
+
 
         let page = req.query.page;
 
@@ -451,7 +550,7 @@ router.get('/search', async (req, res, next) => {
             let idUser = Auth.getTokenData(req).id_account;
 
             for (let accId of ids) {
-                let acc = await Account.selectIdStatus(accId.id_account, idUser);
+                let acc = await Account.selectId(accId.id_account, idUser);
                 list.push(acc)
             }
         } else {
@@ -464,7 +563,6 @@ router.get('/search', async (req, res, next) => {
             message: 'Tìm kiếm danh sách tài khoản thành công',
             data: list
         });
-        // }
     } catch (err) {
         console.log(err);
         return res.sendStatus(500)
