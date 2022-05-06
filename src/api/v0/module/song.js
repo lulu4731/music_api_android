@@ -224,6 +224,18 @@ db.autoListen = (idSong, listen) => {
     })
 }
 
+// lấy danh sách mới nhất
+db.getListNewestSong = (page = 1) => {
+    return new Promise((resolve, reject) => {
+        pool.query(`SELECT song.id_song FROM song order by id_song DESC LIMIT 20 OFFSET $1`,
+            [(page-1)*20],
+            (err, result) => {
+                if (err) return reject(err);
+                return resolve(result.rows);
+            })
+    })
+}
+
 db.getListSongIdOfAccount = (id, page = 0) => {
     if (page == 0) {
         return new Promise((resolve, reject) => {

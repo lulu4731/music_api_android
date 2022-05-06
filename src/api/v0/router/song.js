@@ -200,7 +200,7 @@ router.get('/new-list', async (req, res, next) => {
     try {
         let page = req.query.page
         if(!page || page < 1) page = 1
-        let newestSongs = await Song.getListNewsetSong(page);
+        let newestSongs = await Song.getListNewestSong(page);
         let data = []
         for(element of newestSongs){
             let song = await getSong(element.id_song)
