@@ -7,6 +7,7 @@ const res = require('express/lib/response');
 var Album = require('../module/album');
 var Auth = require('../../../middleware/auth');
 var Song = require('../module/song');
+var Account = require('../module/account');
 
 //Tạo Album
 router.post('/', Auth.authenGTUser, async (req, res, next) => {
@@ -191,28 +192,91 @@ router.patch('/move/:id_album/song/:id_song', Auth.authenGTUser, async (req, res
     }
 })
 
-router.get('/list-song', Auth.authenGTUser, async(req,res,next)=>{
+async function getSong(idSong, idUser = -1) {
+    let song = await Song.getSong(idSong, idUser);
+
+    let album = await Album.hasIdAlbum(song.id_album);
+    let singers = await Song.getSingerSong(idSong);
+    let types = await Song.getTypes(idSong);
+
+    let singerSong = [];
+    for (let i = 0; i < singers.length; i++) {
+        let listSinger = await Account.selectId(singers[i].id_account);
+        singerSong.push(listSinger);
+    }
+
+    album['account'] = await Account.selectId(album.id_account);
+    delete album['id_account'];
+
+    song['account'] = await Account.selectId(song.id_account);
+    song['album'] = album;
+    song['singers'] = singerSong;
+    song['types'] = types;
+
+    delete song['id_account'];
+    delete song['id_album'];
+
+    return song;
+}
+
+router.get('/all', Auth.authenGTUser, async (req, res, next) => {
     try {
-        let acc = await Auth.getTokenData(req).id_account;
+        let accId = await Auth.getTokenData(req).id_account;
 
-        // Tài khoản bị khóa
-        // if (acc.account_status != 0) {
-        //     return res.status(403).json({
-        //         message: 'Tài khoản đã bị khóa, không thể thêm bài'
-        //     })
-        // }
+        let albums = await Album.getListAlbum(accId);
+        for (let i = 0; i < albums.length; i++) {
+            let totalSong = await Album.countSongOfAlbum(albums[i].id_album)
+            albums[i].total_song = parseInt(totalSong.cnt)
+        }
 
-        let result = await Album.getListAlbum(acc);
-
-        res.status(200).json({
+        return res.status(200).json({
             message: 'Lấy danh sách thành công',
-            data: result
+            data: albums
         })
-
-
     } catch (error) {
         console.log(error);
-        res.statusCode(500);
+        return res.status(500);
+    }
+})
+
+router.get('/:id/songs', async (req, res, next) => {
+    try {
+        let idAlbum = req.params.id
+
+        let exists = await Album.has(idAlbum)
+        if (!exists) {
+            return res.status(404).json({
+                message: 'Album không tồn tại'
+            })
+        }
+
+        let idUser = Auth.getUserID(req)
+        let album = await Album.selectId(idAlbum)
+        let idAccount = album.id_account
+
+        let songsId
+        if (idUser === idAccount) {
+            // Nếu là chủ sở hữu album thì hiển thị tất cả bài hát (kể cả ẩn)
+            songsId = await Album.getAllSongsOfAlbum(idAlbum)
+        } else {
+            // Chỉ hiện các bài hát công khai
+            songsId = await Album.getPublicSongsOfAlbum(idAlbum)
+        }
+
+
+        let songs = []
+        for (element of songsId) {
+            let song = await getSong(element.id_song, idUser)
+            songs.push(song)
+        }
+
+        return res.status(200).json({
+            message: 'Lấy danh sách thành công',
+            data: songs
+        })
+    } catch (error) {
+        console.log(error);
+        return res.status(500);
     }
 })
 
