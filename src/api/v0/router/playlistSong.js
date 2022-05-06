@@ -5,7 +5,7 @@ const Playlist_Song = require('../module/playlistSong')
 const Playlist = require('../module/playList')
 const Account = require('../module/account')
 const Song = require('../module/song')
-const { composer } = require('googleapis/build/src/apis/composer')
+const Album = require('../module/album')
 
 router.post('/:id_playlist/song/:id_song', Auth.authenGTUser, async (req, res, next) => {
     try {
@@ -80,6 +80,34 @@ router.delete('/:id_playlist/song/:id_song', Auth.authenGTUser, async (req, res,
         return res.sendStatus(500)
     }
 })
+
+async function getSong(idSong, idUser = -1){
+    let song = await Song.getSong(idSong, idUser);
+
+    let album = await Album.hasIdAlbum(song.id_album);
+    let singers = await Song.getSingerSong(idSong);
+    let types = await Song.getTypes(idSong);
+
+    let singerSong = [];
+    for (let i = 0; i < singers.length; i++) {
+        let listSinger = await Account.selectId(singers[i].id_account);
+        singerSong.push(listSinger);
+    }
+
+    album['account'] = await Account.selectId(album.id_account);
+    delete album['id_account'];
+            
+    song['account'] = await Account.selectId(song.id_account);
+    song['album'] = album;
+    song['singers'] = singerSong;
+    song['types'] = types;
+
+    delete song['id_account'];
+    delete song['id_album'];
+
+    return song;
+}
+
 router.get('/prominent', async (req, res, next) => {
     try {
         const listPlaylist = await Playlist_Song.listPlaylistTotalListenSong()
@@ -91,7 +119,7 @@ router.get('/prominent', async (req, res, next) => {
             songId = await Playlist_Song.listPlaylistSong(listPlaylist[i].id_playlist)
 
             for (let i = 0; i < songId.length; i++) {
-                song.push(await Song.getSong(songId[i].id_song))
+                song.push(await getSong(songId[i].id_song))
             }
 
             data.push({
