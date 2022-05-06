@@ -195,7 +195,7 @@ db.selectName = (id_account) => {
 
 db.add = (account) => {
     return new Promise((resolve, reject) => {
-        pool.query("INSERT INTO account (account_name, email, password, role, avatar) VALUES ($1,$2,$3,$4,$5, $6) RETURNING id_account",
+        pool.query("INSERT INTO account (account_name, email, password, role, avatar) VALUES ($1,$2,$3,$4,$5) RETURNING id_account",
             [account.account_name, account.email, account.password, account.role, account.avatar],
             (err, result) => {
                 if (err) return reject(err);
