@@ -7,6 +7,33 @@ const Account = require('../module/account')
 const Song = require('../module/song')
 const Album = require('../module/album')
 
+const getSong = async (idSong, idUser = -1) => {
+    let song = await Song.getSong(idSong, idUser);
+
+    let album = await Album.hasIdAlbum(song.id_album);
+    let singers = await Song.getSingerSong(idSong);
+    let types = await Song.getTypes(idSong);
+
+    let singerSong = [];
+    for (let i = 0; i < singers.length; i++) {
+        let listSinger = await Account.selectId(singers[i].id_account);
+        singerSong.push(listSinger);
+    }
+
+    album['account'] = await Account.selectId(album.id_account);
+    delete album['id_account'];
+
+    song['account'] = await Account.selectId(song.id_account);
+    song['album'] = album;
+    song['singers'] = singerSong;
+    song['types'] = types;
+
+    delete song['id_account'];
+    delete song['id_album'];
+
+    return song;
+}
+
 router.post('/:id_playlist/song/:id_song', Auth.authenGTUser, async (req, res, next) => {
     try {
         const id_song = req.params.id_song
@@ -81,33 +108,6 @@ router.delete('/:id_playlist/song/:id_song', Auth.authenGTUser, async (req, res,
     }
 })
 
-async function getSong(idSong, idUser = -1){
-    let song = await Song.getSong(idSong, idUser);
-
-    let album = await Album.hasIdAlbum(song.id_album);
-    let singers = await Song.getSingerSong(idSong);
-    let types = await Song.getTypes(idSong);
-
-    let singerSong = [];
-    for (let i = 0; i < singers.length; i++) {
-        let listSinger = await Account.selectId(singers[i].id_account);
-        singerSong.push(listSinger);
-    }
-
-    album['account'] = await Account.selectId(album.id_account);
-    delete album['id_account'];
-            
-    song['account'] = await Account.selectId(song.id_account);
-    song['album'] = album;
-    song['singers'] = singerSong;
-    song['types'] = types;
-
-    delete song['id_account'];
-    delete song['id_album'];
-
-    return song;
-}
-
 router.get('/prominent', async (req, res, next) => {
     try {
         const listPlaylist = await Playlist_Song.listPlaylistTotalListenSong()
@@ -159,7 +159,7 @@ router.get('/:id_playlist', async (req, res, next) => {
         let song = []
 
         for (let i = 0; i < listPlaylistSong.length; i++) {
-            song.push(await Song.getSong(listPlaylistSong[i].id_song))
+            song.push(await getSong(listPlaylistSong[i].id_song))
         }
 
         return res.status(200).json({
@@ -192,7 +192,7 @@ router.get('/', Auth.authenGTUser, async (req, res, next) => {
 
 
             for (let i = 0; i < songId.length; i++) {
-                song.push(await Song.getSong(songId[i].id_song, id_account))
+                song.push(await getSong(songId[i].id_song, id_account))
             }
 
             data.push({
