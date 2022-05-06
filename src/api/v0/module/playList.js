@@ -14,6 +14,17 @@ db.add = (name_playlist, id_account, playlist_status) => {
     })
 }
 
+db.getPlaylist = (id_playlist) => {
+    return new Promise((resolve, reject) => {
+        pool.query("SELECT id_playlist, name_playlist, playlist_status FROM playlist WHERE id_playlist=$1",
+            [id_playlist],
+            (err, result) => {
+                if (err) return reject(err);
+                return resolve(result.rows[0]);
+            })
+    })
+}
+
 db.has = (id) => {
     return new Promise((resolve, reject) => {
         pool.query("SELECT name_playlist FROM playlist WHERE id_playlist=$1",
