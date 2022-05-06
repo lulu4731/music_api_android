@@ -219,7 +219,7 @@ async function getSong(idSong, idUser = -1) {
     return song;
 }
 
-router.get('/all', Auth.authenGTUser, async (req, res, next) => {
+router.get('/list', Auth.authenGTUser, async (req, res, next) => {
     try {
         let accId = await Auth.getTokenData(req).id_account;
 
@@ -231,6 +231,33 @@ router.get('/all', Auth.authenGTUser, async (req, res, next) => {
 
         return res.status(200).json({
             message: 'Lấy danh sách thành công',
+            data: albums
+        })
+    } catch (error) {
+        console.log(error);
+        return res.status(500);
+    }
+})
+
+router.get('/all', Auth.authenGTUser, async (req, res, next) => {
+    try {
+        let accId = await Auth.getTokenData(req).id_account;
+        let account = await Account.selectId(accId)
+
+        let albums = await Album.getListAlbum(accId);
+        for (let i = 0; i < albums.length; i++) {
+            let songsId = await Album.getAllSongsOfAlbum(albums[i].id_album)
+            let songs = []
+            for (songElement of songsId) {
+                let song = await getSong(songElement.id_song)
+                songs.push(song)
+            }
+            albums[i].account = account
+            albums[i].songs = songs
+        }
+
+        return res.status(200).json({
+            message: 'Lấy danh sách album thành công',
             data: albums
         })
     } catch (error) {
