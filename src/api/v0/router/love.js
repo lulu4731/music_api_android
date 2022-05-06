@@ -109,6 +109,8 @@ router.get('/love-song', Auth.authenGTUser, async (req, res, next) => {
         if(!page || page < 1) page = 1
         let acc = Auth.getTokenData(req).id_account;
 
+        let idUser = Auth.getUserID(req)
+
 
         // Tài khoản bị khóa
         // if (acc.account_status != 0) {
@@ -120,7 +122,7 @@ router.get('/love-song', Auth.authenGTUser, async (req, res, next) => {
         let list = await Love.getListSong(acc, page);
         let data = []
         for(element of list){
-            let song = await getSong(element.id_song)
+            let song = await getSong(element.id_song, idUser)
             data.push(song)
         }
 
