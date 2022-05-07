@@ -1,6 +1,7 @@
 const express = require('express')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcryptjs')
+const saltRounds = 10;
 const router = express.Router()
 const Auth = require('../../../middleware/auth');
 const Account = require('../module/account')
@@ -8,6 +9,8 @@ const Album = require('../module/album');
 const Song = require('../module/song');
 const PlayList = require('../module/playList');
 const PlaylistSong = require('../module/playlistSong');
+const Follow = require('../module/follow');
+
 
 /**
  * Đăng nhập
@@ -33,10 +36,8 @@ router.post('/login', async (req, res, next) => {
 
         if (exist) {
             let acc = await Account.selectByEmail(email);
-            // let match = await bcrypt.compare(password, acc.password);
-            // console.log(match);
-            // console.log(acc.password);
-            if (password === acc.password) {
+            let match = await bcrypt.compare(password, acc.password);
+            if (match) {
                 var data = {
                     "id_account": acc.id_account,
                     "role": acc.role,
@@ -53,12 +54,12 @@ router.post('/login', async (req, res, next) => {
                 });
             } else {
                 return res.status(400).json({
-                    message: 'Mật khẩu hoặc tài khoản không đúng1'
+                    message: 'Mật khẩu hoặc tài khoản không đúng'
                 });
             }
         } else {
             return res.status(400).json({
-                message: 'Mật khẩu hoặc tài khoản không đúng2',
+                message: 'Mật khẩu hoặc tài khoản không đúng',
             });
         }
 
@@ -126,9 +127,7 @@ router.get('/information', Auth.authenGTUser, async (req, res, next) => {
                 song['types'] = types;
                 delete song['id_account'];
                 delete song['id_album'];
-                data.push({
-                    song: song
-                });
+                data.push(song);
             }
             res.status(200).json({
                 message: 'Lấy danh sách các bài hát của tài khoản thành công',
@@ -142,6 +141,65 @@ router.get('/information', Auth.authenGTUser, async (req, res, next) => {
     }
 })
 
+
+/**
+ * Thêm 1 tài khoản thường
+ * @body        account_name, real_name, email, password
+ * @permission  Ai cũng có thể thực thi
+ * @return      201: Tạo thành công, trả về id vừa được thêm
+ *              400: Thiếu thông tin đăng ký,
+ *                   Xác nhận mật khẩu không đúng
+ */
+ router.post('/', async (req, res, next) => {
+    try {
+        var { email, account_name, password, confirmPassword} = req.body;
+
+        if ( email && account_name  && password && confirmPassword) {
+            if(password === confirmPassword){
+                let role = 0;
+                bcrypt.hash(password, saltRounds, async (err, hash) => {
+                password = hash;
+                if (err) {
+                    console.log(err);
+                    return res.sendStatus(500);
+                }
+
+                let emailExists = await Account.hasEmail(email);
+                if (emailExists) {
+                    return res.status(400).json({
+                        message: 'Email này đã được sử dụng!'
+                    })
+                }
+
+                let avatar ="";
+                let acc = { account_name, email, password, role, avatar };
+                let insertId = await Account.add(acc);
+
+                res.status(201).json({
+                    message: 'Tạo mới tài khoản thành công',
+                    data: insertId
+                });
+            });
+            }else {
+                res.status(400).json({
+                    message: 'Xác nhận mật khẩu không chính xác'
+                })
+            }
+            
+
+        } else {
+            res.status(400).json({
+                message: 'Thiếu dữ liệu để tạo tài khoản'
+            })
+        }
+    } catch (e) {
+        console.log(e);
+        res.status(500).json({
+            message: 'Something wrong'
+        })
+    }
+
+});
 
 /**
  * Lấy thông tin 1 tài khoản theo id
@@ -287,9 +345,7 @@ router.get('/:id/album', async (req, res, next) => {
                 delete album['id_account'];
                 album['account'] = acc;
                 album['songs'] = listSong;
-                data.push({
-                    album: album
-                });
+                data.push(album);
             }
 
             res.status(200).json({
@@ -350,9 +406,7 @@ router.get('/:id/songs', async (req, res, next) => {
                 song['types'] = types;
                 delete song['id_account'];
                 delete song['id_album'];
-                data.push({
-                    song: song
-                });
+                data.push(song);
             }
             res.status(200).json({
                 message: 'Lấy danh sách các bài hát của tài khoản thành công',
@@ -422,16 +476,12 @@ router.get('/:id/playlist', async (req, res, next) => {
                         song['types'] = types;
                         delete song['id_account'];
                         delete song['id_album'];
-                        songList.push({
-                            song: song
-                        });;
+                        songList.push(song);;
 
                     }
-                    playList['Songs'] = songList;
+                    playList['songs'] = songList;
                     playList['account'] = acc;
-                    data.push({
-                        playList: playList
-                    });
+                    data.push(playList);
                 }
 
             }
@@ -568,5 +618,116 @@ router.get('/', async (req, res, next) => {
         return res.sendStatus(500)
     }
 });
+
+/**
+ * Lấy danh sách tài khoản theo dõi TK có id cho trước
+ * @params      id tài khoản cần tra cứu
+ * @permission  Theo token
+ * @return      200: Thành công, trả về danh sách tài khoản 
+ *              404: Tài khoản không tồn tại
+ */
+ router.get('/:id/follower', async (req, res, next) => {
+    try {
+        let id = req.params.id;
+
+        const authorizationHeader = req.headers['authorization'];
+
+        let idUser = false;
+
+        if (authorizationHeader) {
+            const token = authorizationHeader.split(' ')[1];
+            if (!token) return res.sendStatus(401);
+
+            jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, data) => {
+                if (err) {
+                    console.log(err);
+                    return res.sendStatus(401);
+                }
+            })
+
+            idUser = Auth.getTokenData(req).id_account;
+        }
+
+        let accExists = await Account.has(id);
+        if (accExists) {
+            let result = await Follow.listFollowingOf(id);
+            let data = [];
+            for (let accFollowing of result) {
+                let acc;
+                if (idUser === false) acc = await Account.selectId(accFollowing.id_following);
+                else acc = await Account.selectId(accFollowing.id_following, idUser);
+                data.push(acc)
+            }
+
+            res.status(200).json({
+                message: 'Lấy danh sách các tài khoản theo dõi người này thành công',
+                data: data
+            })
+        } else {
+            res.status(404).json({
+                message: 'Tài khoản không tồn tại'
+            })
+        }
+    } catch (error) {
+        console.log(error);
+        res.sendStatus(500);
+    }
+})
+
+/**
+ * Lấy danh sách tài khoản mà TK có id cho trước theo dõi
+ * @params      id tài khoản cần tra cứu
+ * @permission  Theo token
+ * @return      200: Thành công, trả về danh sách tài khoản 
+ *              404: Tài khoản không tồn tại
+ */
+router.get('/:id/following', async (req, res, next) => {
+    try {
+        let id = req.params.id;
+
+        const authorizationHeader = req.headers['authorization'];
+
+        let idUser = false;
+
+        if (authorizationHeader) {
+            const token = authorizationHeader.split(' ')[1];
+            if (!token) return res.sendStatus(401);
+
+            jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, data) => {
+                if (err) {
+                    console.log(err);
+                    return res.sendStatus(401);
+                }
+            })
+
+            idUser = Auth.getTokenData(req).id_account;
+        }
+
+        let accExists = await Account.has(id);
+        if (accExists) {
+            let result = await Follow.listFollowerOf(id);
+            let data = [];
+            for (let accFollowing of result) {
+                let acc;
+                if (idUser === false) acc = await Account.selectId(accFollowing.id_follower);
+                else acc = await Account.selectId(accFollowing.id_follower, idUser);
+                data.push(acc)
+            }
+
+            res.status(200).json({
+                message: 'Lấy danh sách các tài khoản theo dõi người này thành công',
+                data: data
+            })
+        } else {
+            res.status(404).json({
+                message: 'Tài khoản không tồn tại'
+            })
+        }
+    } catch (error) {
+        console.log(error);
+        res.sendStatus(500);
+    }
+})
+
 
 module.exports = router
