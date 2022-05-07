@@ -280,4 +280,25 @@ db.countAdmin = () => {
     })
 }
 
+db.getListAccountHot = (idUser = -1) => {
+    return new Promise((resolve, reject) => {
+        pool.query(`SELECT A.id_account, A.account_name, A.avatar, A.email, A.create_date, A.account_status, A.role,
+                (select count(*) from follow_account FA where id_follower = A.id_account) as follower,
+                (select count(*) from follow_account FA where id_following = A.id_account) as following,
+                (select exists(select * from follow_account where id_follower = A.id_account and id_following = $1)) as follow_status,
+                (select sum(CL.count_love_song) as total_love
+                    from (select count(L.id_song) as count_love_song
+                        from love L, song S
+                        where L.id_song = S.id_song and S.id_account = A.id_account
+                        group by S.id_song ) as CL)
+                FROM account A
+                order by follower desc`,
+            [idUser],
+            (err, result) => {
+                if (err) return reject(err);
+                return resolve(result.rows);
+            })
+    });
+}
+
 module.exports = db
