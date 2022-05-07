@@ -133,12 +133,12 @@ CREATE TABLE follow_account(
 
 CREATE TABLE listen (
 	id_song serial,
-	day timestamp without time zone default timezone('Asia/Ho_Chi_Minh'::text, now()),
-	listenOfDay bigint default 1,
+	day date,
+	listenOfDay bigint,
 	
 	PRIMARY KEY(id_song, day),
 	
-	FOREIGN KEY (id_song) REFERENCES song(id_song)
+	FOREIGN KEY (id_song) REFERENCES song(id_song),
 );
 <<<<<<< HEAD
 =======
