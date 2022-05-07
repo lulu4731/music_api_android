@@ -125,12 +125,12 @@ CREATE TABLE follow_account(
 
 CREATE TABLE listen (
 	id_song serial,
-	day date,
-	listenOfDay bigint,
+	day timestamp without time zone default timezone('Asia/Ho_Chi_Minh'::text, now()),
+	listenOfDay bigint default 1,
 	
 	PRIMARY KEY(id_song, day),
 	
-	FOREIGN KEY (id_song) REFERENCES song(id_song),
+	FOREIGN KEY (id_song) REFERENCES song(id_song)
 );
 	
 alter table song_type add FOREIGN KEY (id_song) REFERENCES song(id_song) ON DELETE CASCADE

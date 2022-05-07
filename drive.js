@@ -1,4 +1,4 @@
-const { refreshToken } = require('firebase-admin/app');
+//const { refreshToken } = require('firebase-admin/app');
 const { google } = require('googleapis');
 const fs = require('fs');
 const path = require('path')
@@ -52,8 +52,8 @@ MyDrive.uploadSong = async (file, filename) => {
         const createFile = await drive.files.create({
             requestBody: {
                 name: `${filename}.mp3`,
-                mimeType: 'song/mp3',
-                parents: [FOLDERSONG]
+                mimeType: 'song/mp3'
+                //parents: [FOLDERSONG]
             },
             media: {
                 mimeType: 'song/mp3',
