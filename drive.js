@@ -3,7 +3,7 @@ const { google } = require('googleapis');
 const fs = require('fs');
 const path = require('path')
 const { Duplex } = require('stream');
-require('dotenv').config(); 
+require('dotenv').config();
 
 
 const CLIENT_ID = process.env.CLIENT_ID;
@@ -135,5 +135,5 @@ MyDrive.deleteIMG = async (fileId) => {
 MyDrive.getImageId = (path) => {
     let pos = path.lastIndexOf('=');
     return path.substr(pos + 1);
-  }
+}
 var that = module.exports = MyDrive;

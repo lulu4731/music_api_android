@@ -10,6 +10,7 @@ const Song = require('../module/song');
 const PlayList = require('../module/playList');
 const PlaylistSong = require('../module/playlistSong');
 const Follow = require('../module/follow');
+const MyDrive = require('../../../../drive');
 
 
 async function getSong(idSong, idUser = -1) {
@@ -259,26 +260,37 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
                 message: 'Không thể sửa đổi thông tin của người khác'
             })
         }
-        let { account_name } = req.body;
+        let { account_name, image_name } = req.body;
+
         if (account_name) {
             let avatarPath = '';
             if (req.files && req.files.image) {
+                let image = req.files.image;
+
                 //update avt mới
-                let idIMGDrive = await MyDrive.uploadIMG(image, updateId);
-                //xóa avt cũ
+                let idIMGDrive = await MyDrive.uploadIMG(image, image_name);
+                if (!idIMGDrive) {
+                    return res.status(400).json({
+                        message: "Lỗi upload image"
+                    })
+                }
+                // //xóa avt cũ
                 let oldAvatarId = MyDrive.getImageId(oldAccount.avatar);
-                await MyDrive.deleteFiles(oldAvatarId);
+                if (oldAvatarId) {
+                    await MyDrive.deleteIMG(oldAvatarId);
+                }
 
-                let imgPath = "https://drive.google.com/uc?export=view&id=" + idIMGDrive;
+
+                avatarPath = "https://drive.google.com/uc?export=view&id=" + idIMGDrive;
             }
-            let result = await Account.update(updateId, account_name, imgPath);
+            let result = await Account.update(updateId, account_name, avatarPath);
 
-            res.status(200).json({
+            return res.status(200).json({
                 message: 'Cập nhật thông tin tài khoản thành công',
                 data: result
             })
         } else {
-            res.status(400).json({
+            return res.status(400).json({
                 message: 'account_name ko được để trống'
             })
         }
@@ -286,7 +298,7 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
 
     } catch (e) {
         console.error(e);
-        res.status(500).json({
+        return res.status(500).json({
             message: 'Something wrong'
         })
     }
@@ -616,5 +628,119 @@ router.get('/:id/following', async (req, res, next) => {
     }
 })
 
+/**
+ * Lấy danh sách tài khoản nổi bật 
+ * @permission  mọi người
+ * @return      200: Thành công, trả về danh sách tài khoản 
+ *              
+ */
+router.get('/hot', async (req, res, next) => {
+    try {
+        const authorizationHeader = req.headers['authorization'];
+
+        let idUser = false;
+
+        if (authorizationHeader) {
+            const token = authorizationHeader.split(' ')[1];
+            if (!token) return res.sendStatus(401);
+
+            jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, data) => {
+                if (err) {
+                    console.log(err);
+                    return res.sendStatus(401);
+                }
+            })
+
+            idUser = Auth.getTokenData(req).id_account;
+        }
+        let data;
+        if (!idUser) data = await Account.getListAccountHot();
+        else data = await Account.getListAccountHot(idUser);
+
+        return res.status(200).json({
+            message: 'Tìm kiếm danh sách tài khoản thành công',
+            data: data
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.sendStatus(500);
+    }
+})
+
+/**
+ * Khóa tài khoản
+ * @permisson   Chỉ admin
+ * @return      200: khóa tài khoản thành công
+ * 
+ */
+router.put('/:id/block', Auth.authenAdmin, async (req, res, next) => {
+    try {
+        let id = req.params.id;
+        let accExists = await Account.has(id);
+
+        if (accExists) {
+            let acc = await Account.selectIdLite(id)
+            if (acc.role === 1) {
+                return res.status(403).json({
+                    message: 'không thể khóa tài khoản cùng cấp',
+                })
+            }
+            let result = await Account.updateStatus(id, 1);
+
+            return res.status(201).json({
+                message: 'khóa tài khoản thành công',
+                data: result
+            })
+        } else {
+            return res.status(400).json({
+                message: 'tài khoản này không tồn tại'
+            })
+        }
+
+
+    } catch (error) {
+        console.log(error);
+        return res.sendStatus(500);
+    }
+})
+
+
+/**
+ * Mở khóa tài khoản
+ * @permisson   Chỉ admin
+ * @return      200: khóa tài khoản thành công
+ * 
+ */
+router.put('/:id/unblock', Auth.authenAdmin, async (req, res, next) => {
+    try {
+        let id = req.params.id;
+        let accExists = await Account.has(id);
+
+        if (accExists) {
+            let acc = await Account.selectIdLite(id)
+            if (acc.role === 1) {
+                return res.status(403).json({
+                    message: 'không thể thực hiện với tài khoản cùng cấp',
+                })
+            }
+            let result = await Account.updateStatus(id, 0);
+
+            return res.status(201).json({
+                message: 'mở khóa tài khoản thành công',
+                data: result
+            })
+        } else {
+            return res.status(400).json({
+                message: 'tài khoản này không tồn tại'
+            })
+        }
+
+
+    } catch (error) {
+        console.log(error);
+        return res.sendStatus(500);
+    }
+})
 
 module.exports = router
