@@ -10,6 +10,7 @@ const Song = require('../module/song');
 const PlayList = require('../module/playList');
 const PlaylistSong = require('../module/playlistSong');
 const Follow = require('../module/follow');
+const MyDrive = require('../../../../drive');
 
 
 /**
@@ -94,50 +95,90 @@ router.get('/information', Auth.authenGTUser, async (req, res, next) => {
  * @return      200: Thành công, trả về các bài viết public, đã kiểm duyệt của tài khoản
  *              404: Tài khoản không tồn tại
  */
- router.get('/songs', Auth.authenGTUser, async (req, res, next) => {
+router.get('/songs', Auth.authenGTUser, async (req, res, next) => {
     try {
-            let idAcc = Auth.getTokenData(req).id_account;
-            let acc = await Account.selectId(idAcc);
-            let page = req.query.page;
+        let idAcc = Auth.getTokenData(req).id_account;
+        let acc = await Account.selectId(idAcc);
+        let page = req.query.page;
 
-            let songsId;
-            if(page) songsId = await Song.getListSongIdOfAccount(idAcc, page);
-            else songsId = await Song.getListSongIdOfAccount(idAcc);
+        let songsId;
+        if (page) songsId = await Song.getListSongIdOfAccount(idAcc, page);
+        else songsId = await Song.getListSongIdOfAccount(idAcc);
 
-            let data = [];
-            for (let i = 0; i < songsId.length; i++) {
-                let song = await Song.getSong(songsId[i].id_song, idAcc);
-                let album = await Album.hasIdAlbum(song.id_album);
-                let singers = await Song.getSingerSong(songsId[i].id_song);
-                let types = await Song.getTypes(songsId[i].id_song);
+        let data = [];
+        for (let i = 0; i < songsId.length; i++) {
+            let song = await Song.getSong(songsId[i].id_song, idAcc);
+            let album = await Album.hasIdAlbum(song.id_album);
+            let singers = await Song.getSingerSong(songsId[i].id_song);
+            let types = await Song.getTypes(songsId[i].id_song);
 
 
-                let singerSong = [];
-                for (let i = 0; i < singers.length; i++) {
-                    let listSinger = await Account.selectId(singers[i].id_account);
-                    singerSong.push(listSinger);
-                }
-
-                album['account'] = await Account.selectId(album.id_account);
-                delete album['id_account'];
-                
-                song['account'] = await Account.selectId(song.id_account);
-                song['album'] = album;
-                song['singers'] = singerSong;
-                song['types'] = types;
-                delete song['id_account'];
-                delete song['id_album'];
-                data.push(song);
+            let singerSong = [];
+            for (let i = 0; i < singers.length; i++) {
+                let listSinger = await Account.selectId(singers[i].id_account);
+                singerSong.push(listSinger);
             }
-            res.status(200).json({
-                message: 'Lấy danh sách các bài hát của tài khoản thành công',
-                data: data
-            })
- 
+
+            album['account'] = await Account.selectId(album.id_account);
+            delete album['id_account'];
+
+            song['account'] = await Account.selectId(song.id_account);
+            song['album'] = album;
+            song['singers'] = singerSong;
+            song['types'] = types;
+            delete song['id_account'];
+            delete song['id_album'];
+            data.push(song);
+        }
+        res.status(200).json({
+            message: 'Lấy danh sách các bài hát của tài khoản thành công',
+            data: data
+        })
+
 
     } catch (error) {
-         console.log(error);
-         res.sendStatus(500);
+        console.log(error);
+        res.sendStatus(500);
+    }
+})
+
+/**
+ * Lấy danh sách tài khoản nổi bật 
+ * @permission  mọi người
+ * @return      200: Thành công, trả về danh sách tài khoản 
+ *              
+ */
+router.get('/hot', async (req, res, next) => {
+    try {
+        const authorizationHeader = req.headers['authorization'];
+
+        let idUser = false;
+
+        if (authorizationHeader) {
+            const token = authorizationHeader.split(' ')[1];
+            if (!token) return res.sendStatus(401);
+
+            jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, data) => {
+                if (err) {
+                    console.log(err);
+                    return res.sendStatus(401);
+                }
+            })
+
+            idUser = Auth.getTokenData(req).id_account;
+        }
+        let data;
+        if (!idUser) data = await Account.getListAccountHot();
+        else data = await Account.getListAccountHot(idUser);
+
+        return res.status(200).json({
+            message: 'Tìm kiếm danh sách tài khoản thành công',
+            data: data
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.sendStatus(500);
     }
 })
 
@@ -150,42 +191,42 @@ router.get('/information', Auth.authenGTUser, async (req, res, next) => {
  *              400: Thiếu thông tin đăng ký,
  *                   Xác nhận mật khẩu không đúng
  */
- router.post('/', async (req, res, next) => {
+router.post('/', async (req, res, next) => {
     try {
-        var { email, account_name, password, confirmPassword} = req.body;
+        var { email, account_name, password, confirmPassword } = req.body;
 
-        if ( email && account_name  && password && confirmPassword) {
-            if(password === confirmPassword){
+        if (email && account_name && password && confirmPassword) {
+            if (password === confirmPassword) {
                 let role = 0;
                 bcrypt.hash(password, saltRounds, async (err, hash) => {
-                password = hash;
-                if (err) {
-                    console.log(err);
-                    return res.sendStatus(500);
-                }
+                    password = hash;
+                    if (err) {
+                        console.log(err);
+                        return res.sendStatus(500);
+                    }
 
-                let emailExists = await Account.hasEmail(email);
-                if (emailExists) {
-                    return res.status(400).json({
-                        message: 'Email này đã được sử dụng!'
-                    })
-                }
+                    let emailExists = await Account.hasEmail(email);
+                    if (emailExists) {
+                        return res.status(400).json({
+                            message: 'Email này đã được sử dụng!'
+                        })
+                    }
 
-                let avatar ="";
-                let acc = { account_name, email, password, role, avatar };
-                let insertId = await Account.add(acc);
+                    let avatar = "";
+                    let acc = { account_name, email, password, role, avatar };
+                    let insertId = await Account.add(acc);
 
-                res.status(201).json({
-                    message: 'Tạo mới tài khoản thành công',
-                    data: insertId
+                    res.status(201).json({
+                        message: 'Tạo mới tài khoản thành công',
+                        data: insertId
+                    });
                 });
-            });
-            }else {
+            } else {
                 res.status(400).json({
                     message: 'Xác nhận mật khẩu không chính xác'
                 })
             }
-            
+
 
         } else {
             res.status(400).json({
@@ -257,26 +298,37 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
                 message: 'Không thể sửa đổi thông tin của người khác'
             })
         }
-        let { account_name } = req.body;
+        let { account_name, image_name } = req.body;
+
         if (account_name) {
             let avatarPath = '';
             if (req.files && req.files.image) {
+                let image = req.files.image;
+
                 //update avt mới
-                let idIMGDrive = await MyDrive.uploadIMG(image, updateId);
-                //xóa avt cũ
+                let idIMGDrive = await MyDrive.uploadIMG(image, image_name);
+                if (!idIMGDrive) {
+                    return res.status(400).json({
+                        message: "Lỗi upload image"
+                    })
+                }
+                // //xóa avt cũ
                 let oldAvatarId = MyDrive.getImageId(oldAccount.avatar);
-                await MyDrive.deleteFiles(oldAvatarId);
+                if (oldAvatarId) {
+                    await MyDrive.deleteIMG(oldAvatarId);
+                }
 
-                let imgPath = "https://drive.google.com/uc?export=view&id=" + idIMGDrive;
+
+                avatarPath = "https://drive.google.com/uc?export=view&id=" + idIMGDrive;
             }
-            let result = await Account.update(updateId, account_name, imgPath);
+            let result = await Account.update(updateId, account_name, avatarPath);
 
-            res.status(200).json({
+            return res.status(200).json({
                 message: 'Cập nhật thông tin tài khoản thành công',
                 data: result
             })
         } else {
-            res.status(400).json({
+            return res.status(400).json({
                 message: 'account_name ko được để trống'
             })
         }
@@ -284,7 +336,7 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
 
     } catch (e) {
         console.error(e);
-        res.status(500).json({
+        return res.status(500).json({
             message: 'Something wrong'
         })
     }
@@ -315,19 +367,19 @@ router.get('/:id/album', async (req, res, next) => {
             for (let i = 0; i < albumId.length; i++) {
 
                 let album = await Album.hasIdAlbum(albumId[i].id_album);
-                
+
 
                 let acc = await Account.selectId(album.id_account);
 
                 let songs = await Album.selectSongsOfAlbum(albumId[i].id_album);
-                
-                let listSong = [];  
+
+                let listSong = [];
                 for (let j = 0; j < songs.length; j++) {
                     let song = await Song.getSong(songs[j].id_song, idAccount);
                     let singers = await Song.getSingerSong(songs[j].id_song);
                     let types = await Song.getTypes(songs[j].id_song);
 
-                    
+
 
                     let singerSong = [];
                     for (let y = 0; y < singers.length; y++) {
@@ -392,14 +444,14 @@ router.get('/:id/songs', async (req, res, next) => {
 
 
                 let singerSong = [];
-                for (let j = 0; j < singers.length;j++) {
+                for (let j = 0; j < singers.length; j++) {
                     let listSinger = await Account.selectId(singers[j].id_account);
                     singerSong.push(listSinger);
                 }
 
                 album['account'] = await Account.selectId(album.id_account);
                 delete album['id_account'];
-                
+
                 song['account'] = await Account.selectId(song.id_account);
                 song['album'] = album;
                 song['singers'] = singerSong;
@@ -449,12 +501,12 @@ router.get('/:id/playlist', async (req, res, next) => {
 
             let data = [];
             for (let i = 0; i < playlists.length; i++) {
-                if(playlists[i].playlist_status === 0){
-                    let playList = await PlayList.getPlaylist(playlists[i].id_playlist); 
+                if (playlists[i].playlist_status === 0) {
+                    let playList = await PlayList.getPlaylist(playlists[i].id_playlist);
                     let songs = await PlaylistSong.listPlaylistSong(playList.id_playlist);
-                    
-                    let songList =[];
-                    for(let j=0; j< songs.length; j++){
+
+                    let songList = [];
+                    for (let j = 0; j < songs.length; j++) {
                         let song = await Song.getSong(songs[j].id_song, idAccount);
                         let album = await Album.hasIdAlbum(song.id_album);
                         let singers = await Song.getSingerSong(song.id_song);
@@ -469,7 +521,7 @@ router.get('/:id/playlist', async (req, res, next) => {
 
                         album['account'] = await Account.selectId(album.id_account);
                         delete album['id_account'];
-                        
+
                         song['account'] = await Account.selectId(song.id_account);
                         song['album'] = album;
                         song['singers'] = singerSong;
@@ -489,7 +541,7 @@ router.get('/:id/playlist', async (req, res, next) => {
                 message: 'Lấy danh sách các playlist của tài khoản thành công',
                 data: data
             })
-        
+
         } else {
             res.status(404).json({
                 message: 'Tài khoản không tồn tại'
@@ -619,6 +671,8 @@ router.get('/', async (req, res, next) => {
     }
 });
 
+
+
 /**
  * Lấy danh sách tài khoản theo dõi TK có id cho trước
  * @params      id tài khoản cần tra cứu
@@ -626,7 +680,7 @@ router.get('/', async (req, res, next) => {
  * @return      200: Thành công, trả về danh sách tài khoản 
  *              404: Tài khoản không tồn tại
  */
- router.get('/:id/follower', async (req, res, next) => {
+router.get('/:id/follower', async (req, res, next) => {
     try {
         let id = req.params.id;
 
@@ -660,7 +714,7 @@ router.get('/', async (req, res, next) => {
             }
 
             res.status(200).json({
-                message: 'Lấy danh sách các tài khoản theo dõi người này thành công',
+                message: 'Lấy danh sách các tài khoản đang theo dõi người này thành công',
                 data: data
             })
         } else {
@@ -715,7 +769,7 @@ router.get('/:id/following', async (req, res, next) => {
             }
 
             res.status(200).json({
-                message: 'Lấy danh sách các tài khoản theo dõi người này thành công',
+                message: 'Lấy danh sách các tài khoản  người này đang theo dõi thành công',
                 data: data
             })
         } else {
@@ -728,6 +782,82 @@ router.get('/:id/following', async (req, res, next) => {
         res.sendStatus(500);
     }
 })
+
+/**
+ * Khóa tài khoản
+ * @permisson   Chỉ admin
+ * @return      200: khóa tài khoản thành công
+ * 
+ */
+ router.put('/:id/block', Auth.authenAdmin, async (req, res, next) => {
+    try {
+        let id = req.params.id;
+        let accExists = await Account.has(id);
+
+        if(accExists){
+            let acc = await Account.selectIdLite(id)
+            if(acc.role ===1){
+                return res.status(403).json({
+                    message: 'không thể khóa tài khoản cùng cấp',
+                })
+            }
+            let result = await Account.updateStatus(id, 1);
+            
+            return res.status(201).json({
+                message: 'khóa tài khoản thành công',
+                data: result
+            })
+        }else {
+            return res.status(400).json({
+                message: 'tài khoản này không tồn tại'
+            })
+        }
+
+        
+    } catch (error) {
+        console.log(error);
+        return res.sendStatus(500);
+    }
+})
+
+
+/**
+ * Mở khóa tài khoản
+ * @permisson   Chỉ admin
+ * @return      200: khóa tài khoản thành công
+ * 
+ */
+ router.put('/:id/unblock', Auth.authenAdmin, async (req, res, next) => {
+    try {
+        let id = req.params.id;
+        let accExists = await Account.has(id);
+
+        if(accExists){
+            let acc = await Account.selectIdLite(id)
+            if(acc.role === 1){
+                return res.status(403).json({
+                    message: 'không thể thực hiện với tài khoản cùng cấp',
+                })
+            }
+            let result = await Account.updateStatus(id, 0);
+            
+            return res.status(201).json({
+                message: 'mở khóa tài khoản thành công',
+                data: result
+            })
+        }else {
+            return res.status(400).json({
+                message: 'tài khoản này không tồn tại'
+            })
+        }
+
+        
+    } catch (error) {
+        console.log(error);
+        return res.sendStatus(500);
+    }
+})
+
 
 
 module.exports = router

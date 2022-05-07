@@ -58,6 +58,7 @@ app.use(`${apiUrl}/song`, require('./src/api/v0/router/comment'))
 app.use(`${apiUrl}/notification`, require('./src/api/v0/router/notification'))
 app.use(`${apiUrl}/account-device`, require('./src/api/v0/router/account_device'))
 app.use(`${apiUrl}/search`, require('./src/api/v0/router/search'))
+app.use(`${apiUrl}/type`, require('./src/api/v0/router/type'))
 
 app.listen(port, () => {
     console.log(`Start website http://localhost:${port}`)
