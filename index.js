@@ -41,6 +41,8 @@ app.use((error, req, res, next) => {
     })
 });
 
+// Type
+app.use(`${apiUrl}/type`, require('./src/api/v0/router/type'));
 // Account
 app.use(`${apiUrl}/account`, require('./src/api/v0/router/account'));
 // Song
