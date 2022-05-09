@@ -125,7 +125,7 @@ CREATE TABLE follow_account(
 
 CREATE TABLE listen (
 	id_song serial,
-	day timestamp without time zone default timezone('Asia/Ho_Chi_Minh'::text, now()),
+	day timestamp without time zone default date_trunc('day', timezone('Asia/Ho_Chi_Minh'::text, now()))::date,
 	listenOfDay bigint default 1,
 	
 	PRIMARY KEY(id_song, day),
