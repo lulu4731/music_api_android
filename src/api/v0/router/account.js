@@ -94,6 +94,46 @@ router.post('/login', async (req, res, next) => {
 })
 
 /**
+ * Lấy danh sách tài khoản nổi bật 
+ * @permission  mọi người
+ * @return      200: Thành công, trả về danh sách tài khoản 
+ *              
+ */
+ router.get('/hot', async (req, res, next) => {
+    try {
+        const authorizationHeader = req.headers['authorization'];
+
+        let idUser = false;
+
+        if (authorizationHeader) {
+            const token = authorizationHeader.split(' ')[1];
+            if (!token) return res.sendStatus(401);
+
+            jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, data) => {
+                if (err) {
+                    console.log(err);
+                    return res.sendStatus(401);
+                }
+            })
+
+            idUser = Auth.getTokenData(req).id_account;
+        }
+        let data;
+        if (!idUser) data = await Account.getListAccountHot();
+        else data = await Account.getListAccountHot(idUser);
+
+        return res.status(200).json({
+            message: 'Tìm kiếm danh sách tài khoản thành công',
+            data: data
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.sendStatus(500);
+    }
+})
+
+/**
  * Lấy thông tin của tài khoản
  * @permission  người đã đăng nhập
  * @returns     200: lấy dữ liệu thành công
@@ -628,45 +668,6 @@ router.get('/:id/following', async (req, res, next) => {
     }
 })
 
-/**
- * Lấy danh sách tài khoản nổi bật 
- * @permission  mọi người
- * @return      200: Thành công, trả về danh sách tài khoản 
- *              
- */
-router.get('/hot', async (req, res, next) => {
-    try {
-        const authorizationHeader = req.headers['authorization'];
-
-        let idUser = false;
-
-        if (authorizationHeader) {
-            const token = authorizationHeader.split(' ')[1];
-            if (!token) return res.sendStatus(401);
-
-            jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, data) => {
-                if (err) {
-                    console.log(err);
-                    return res.sendStatus(401);
-                }
-            })
-
-            idUser = Auth.getTokenData(req).id_account;
-        }
-        let data;
-        if (!idUser) data = await Account.getListAccountHot();
-        else data = await Account.getListAccountHot(idUser);
-
-        return res.status(200).json({
-            message: 'Tìm kiếm danh sách tài khoản thành công',
-            data: data
-        });
-
-    } catch (error) {
-        console.log(error);
-        return res.sendStatus(500);
-    }
-})
 
 /**
  * Khóa tài khoản
