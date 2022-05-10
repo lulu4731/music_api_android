@@ -29,7 +29,7 @@ Authorization: beaer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZF9hY2NvdW50IjoiMS
 }
 
 ### Tăng listen 
-PATCH  http://localhost:8000/api/v0/song/listen/44
+POST  http://localhost:8000/api/v0/song/listen/44
 Content-Type: application/json
 Authorization: beaer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZF9hY2NvdW50IjoiMSIsImlhdCI6MTY1MDkwMTA1NywiZXhwIjoxNjUxNzY1MDU3fQ.n4HVkrUeK9ULZGBtY0IdFt-7TPntebX4oKsolGPEKAQ
 

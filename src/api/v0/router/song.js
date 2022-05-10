@@ -177,11 +177,12 @@ router.get('/best-list', async (req, res, next) => {
 router.get('/:id', async (req, res, next) => {
     try {
         //const authorizationHeader = req.headers['authorization'];
-        // let acc = (await Account.selectId((await Auth.getTokenData(req)).id_account)).id_account;
+        // let acc = await Account.selectId(Auth.getTokenData(req));
+        // let idAccount = acc.id_account;
         // console.log(acc)
 
         let idAccount = Auth.getUserID(req).id_account;
-        let acc = await Account.selectId(idAccount);
+        //let acc = await Account.selectId(idAccount);
 
         let idSong = req.params.id;
         let songExits = await Song.hasSong(idSong);

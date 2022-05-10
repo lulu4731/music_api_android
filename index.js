@@ -203,6 +203,8 @@ app.use(`${apiUrl}/song`, require('./src/api/v0/router/song'));
 app.use(`${apiUrl}/album`, require('./src/api/v0/router/album'));
 //Love
 app.use(`${apiUrl}/love`, require('./src/api/v0/router/love'));
+//Listen
+app.use(`${apiUrl}/listen`, require('./src/api/v0/router/listen'));
 
 //playlist
 app.use(`${apiUrl}/playlist`, require('./src/api/v0/router/playList'))

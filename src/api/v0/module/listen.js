@@ -73,6 +73,48 @@ db.updateListenOfDay = (idSong, day, listenOfDay) => {
     })
 }
 
+//Lấy sum(listen) 10 ngày gần nhất
+db.getListenOf10Day = () => {
+    return new Promise((resolve, reject) => {
+        pool.query(`SELECT id_song, SUM(listenofday) as listen10d
+                    FROM listen
+                    WHERE   day >= now()::date - 10
+                    GROUP BY id_song
+                    ORDER BY  listen10d DESC FETCH FIRST 100 ROWS ONLY`,
+            (err, result) => {
+                if (err) return reject(err);
+                return resolve(result.rows);
+            })
+    })
+}
+
+//Lấy sum(listen) 3 ngày gần nhất
+db.getListenOf3Day = () => {
+    return new Promise((resolve, reject) => {
+        pool.query(`SELECT id_song, SUM(listenofday) as listen10d
+                    FROM listen
+                    WHERE   day >= now()::date - 10
+                    GROUP BY id_song
+                    ORDER BY  listen10d DESC FETCH FIRST 3 ROWS ONLY`,
+            (err, result) => {
+                if (err) return reject(err);
+                return resolve(result.rows);
+            })
+    })
+}
+
+//Lấy thông tin listen trong 10d gần nhất
+db.getListen = (idSong) => {
+    return new Promise((resolve, reject) => {
+        pool.query(`SELECT * FROM listen WHERE id_song = $1 AND day >= (now()::date - 10) ORDER BY day DESC`,
+            [idSong],
+            (err, result) => {
+                if (err) return reject(err);
+                return resolve(result.rows);
+            })
+    })
+}
+
 
 
 module.exports = db
