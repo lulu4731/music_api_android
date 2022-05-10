@@ -204,15 +204,26 @@ db.add = (account) => {
     });
 }
 
-db.update = (id, account_name, avatar) => {
-    return new Promise((resolve, reject) => {
-        pool.query("UPDATE account SET account_name=$1, avatar=$2 WHERE id_account=$3 RETURNING *",
-            [account_name, avatar, id],
-            (err, result) => {
-                if (err) return reject(err);
-                return resolve(result.rows[0]);
-            });
-    })
+db.update = (id, account_name, avatar = '') => {
+    if (avatar == '') {
+        return new Promise((resolve, reject) => {
+            pool.query("UPDATE account SET account_name=$1 WHERE id_account=$2 RETURNING *",
+                [account_name, id],
+                (err, result) => {
+                    if (err) return reject(err);
+                    return resolve(result.rows[0]);
+                });
+        })
+    } else {
+        return new Promise((resolve, reject) => {
+            pool.query("UPDATE account SET account_name=$1, avatar=$2 WHERE id_account=$3 RETURNING *",
+                [account_name, avatar, id],
+                (err, result) => {
+                    if (err) return reject(err);
+                    return resolve(result.rows[0]);
+                });
+        })
+    }
 }
 
 db.updateAvatar = (id, avatar) => {

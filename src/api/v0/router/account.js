@@ -99,7 +99,7 @@ router.post('/login', async (req, res, next) => {
  * @return      200: Thành công, trả về danh sách tài khoản 
  *              
  */
- router.get('/hot', async (req, res, next) => {
+router.get('/hot', async (req, res, next) => {
     try {
         const authorizationHeader = req.headers['authorization'];
 
@@ -132,6 +132,59 @@ router.post('/login', async (req, res, next) => {
         return res.sendStatus(500);
     }
 })
+
+/**
+ * Đổi password của cá nhân
+ * @body        old_password, new_password
+ * @permission  Người đang đăng nhập
+ * @return      200: Đổi thành công
+ *              400: Thiếu dữ liệu
+ *              403: Mật khẩu cũ không chính xác
+ */
+router.put('/change/password', Auth.authenGTUser, async (req, res, next) => {
+    try {
+        let new_password = req.body.new_password;
+        let old_password = req.body.old_password;
+        let id_account = Auth.getTokenData(req).id_account;
+
+        if (old_password !== "") {
+            let acc = await Account.selectId(id_account);
+            acc = await Account.selectByEmail(acc.email);
+            let match = await bcrypt.compare(old_password, acc.password);
+
+            if (match) {
+                if (new_password !== "") {
+                    bcrypt.hash(new_password, saltRounds, async (err, hash) => {
+                        new_password = hash;
+                        let changePassword = await Account.updatePassword(id_account, new_password);
+
+                        return res.status(200).json({
+                            message: 'Thay đổi mật khẩu thành công',
+                        })
+                    });
+                } else {
+                    return res.status(400).json({
+                        message: 'Mật khẩu mới không được bỏ trống'
+                    });
+                }
+            } else {
+                return res.status(403).json({
+                    message: 'Mật khẩu cũ không chính xác!'
+                })
+
+            }
+
+        } else {
+            return res.status(400).json({
+                message: 'Thiếu mật khẩu cũ!'
+            })
+        }
+
+    } catch (err) {
+        console.log(err);
+        return res.sendStatus(500);
+    }
+});
 
 /**
  * Lấy thông tin của tài khoản
@@ -300,7 +353,7 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
                 message: 'Không thể sửa đổi thông tin của người khác'
             })
         }
-        let { account_name, image_name } = req.body;
+        let { account_name } = req.body;
 
         if (account_name) {
             let avatarPath = '';
@@ -308,13 +361,13 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
                 let image = req.files.image;
 
                 //update avt mới
-                let idIMGDrive = await MyDrive.uploadIMG(image, image_name);
+                let idIMGDrive = await MyDrive.uploadIMG(image, "avatar_" + userId);
                 if (!idIMGDrive) {
                     return res.status(400).json({
                         message: "Lỗi upload image"
                     })
                 }
-                // //xóa avt cũ
+                // xóa avt cũ
                 let oldAvatarId = MyDrive.getImageId(oldAccount.avatar);
                 if (oldAvatarId) {
                     await MyDrive.deleteIMG(oldAvatarId);
@@ -496,59 +549,6 @@ router.get('/:id/playlist', async (req, res, next) => {
     }
 })
 
-
-/**
- * Đổi password của cá nhân
- * @body        old_password, new_password
- * @permission  Người đang đăng nhập
- * @return      200: Đổi thành công
- *              400: Thiếu dữ liệu
- *              403: Mật khẩu cũ không chính xác
- */
-router.put('/change/password', Auth.authenGTUser, async (req, res, next) => {
-    try {
-        let new_password = req.body.new_password;
-        let old_password = req.body.old_password;
-        let id_account = Auth.getTokenData(req).id_account;
-
-        if (old_password !== "") {
-            let acc = await Account.selectId(id_account);
-            acc = await Account.selectByEmail(acc.email);
-            let match = await bcrypt.compare(old_password, acc.password);
-
-            if (match) {
-                if (new_password !== "") {
-                    bcrypt.hash(new_password, saltRounds, async (err, hash) => {
-                        new_password = hash;
-                        let changePassword = await Account.updatePassword(id_account, new_password);
-
-                        return res.status(200).json({
-                            message: 'Thay đổi mật khẩu thành công',
-                        })
-                    });
-                } else {
-                    return res.status(400).json({
-                        message: 'Mật khẩu mới không được bỏ trống'
-                    });
-                }
-            } else {
-                return res.status(403).json({
-                    message: 'Mật khẩu cũ không chính xác!'
-                })
-
-            }
-
-        } else {
-            return res.status(400).json({
-                message: 'Thiếu mật khẩu cũ!'
-            })
-        }
-
-    } catch (err) {
-        console.log(err);
-        return res.sendStatus(500);
-    }
-});
 
 
 /**
