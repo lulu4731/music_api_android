@@ -302,8 +302,10 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
                 let linkSong = songExits.link
                 let linkImage = songExits.image_song
 
-                let songFile = req.files.song;
-                let imageFile = req.files.img;
+                let songFile;
+                let imageFile;
+                if(req.files && req.files.song) songFile = req.files.song
+                if(req.files && req.files.img) imageFile = req.files.img
 
 
                 let existAlbum = await Album.hasIdAlbum(req.body.id_album);
