@@ -53,6 +53,9 @@ app.use(`${apiUrl}/album`, require('./src/api/v0/router/album'));
 app.use(`${apiUrl}/love`, require('./src/api/v0/router/love'));
 //Follow
 app.use(`${apiUrl}/follow`, require('./src/api/v0/router/follow'));
+//Listen
+app.use(`${apiUrl}/listen`, require('./src/api/v0/router/listen'));
+
 //playlist
 app.use(`${apiUrl}/playlist`, require('./src/api/v0/router/playList'))
 app.use(`${apiUrl}/playlist_song`, require('./src/api/v0/router/playlistSong'))

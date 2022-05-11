@@ -7,6 +7,7 @@ var Type = require('../module/type');
 var Song = require('../module/song');
 var Album = require('../module/album');
 var Account = require('../module/account')
+var Listen = require('../module/listen')
 
 var MyDrive = require('../../../../drive');
 const e = require('express');
@@ -151,13 +152,13 @@ router.post('/', Auth.authenGTUser, async (req, res, next) => {
 router.get('/type/:id', async (req, res, next) => {
     try {
         let page = req.query.page
-        if(!page || page < 1) page = 1
+        if (!page || page < 1) page = 1
         let idType = req.params.id;
         let listExits = await Song.getListSongtype(idType, page);
-        
+
         if (listExits.exist) {
             let data = []
-            for(element of listExits.list){
+            for (element of listExits.list) {
                 let song = await getSong(element.id_song)
                 data.push(song)
             }
@@ -182,7 +183,7 @@ router.get('/best-list', async (req, res, next) => {
     try {
         let listBestSong = await Song.getBestSong();
         let data = []
-        for(element of listBestSong){
+        for (element of listBestSong) {
             let song = await getSong(element.id_song)
             data.push(song)
         }
@@ -199,10 +200,10 @@ router.get('/best-list', async (req, res, next) => {
 router.get('/new-list', async (req, res, next) => {
     try {
         let page = req.query.page
-        if(!page || page < 1) page = 1
+        if (!page || page < 1) page = 1
         let newestSongs = await Song.getListNewestSong(page);
         let data = []
-        for(element of newestSongs){
+        for (element of newestSongs) {
             let song = await getSong(element.id_song)
             data.push(song)
         }
@@ -215,7 +216,7 @@ router.get('/new-list', async (req, res, next) => {
     }
 })
 
-async function getSong(idSong, idUser = -1){
+async function getSong(idSong, idUser = -1) {
     let song = await Song.getSong(idSong, idUser);
 
     let album = await Album.hasIdAlbum(song.id_album);
@@ -230,7 +231,7 @@ async function getSong(idSong, idUser = -1){
 
     album['account'] = await Account.selectId(album.id_account);
     delete album['id_account'];
-            
+
     song['account'] = await Account.selectId(song.id_account);
     song['album'] = album;
     song['singers'] = singerSong;
@@ -298,14 +299,12 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
 
                 let { name_song, lyrics, description, id_album, types, accounts } = req.body;
 
+                let linkSong = songExits.link
+                let linkImage = songExits.image_song
+
                 let songFile = req.files.song;
                 let imageFile = req.files.img;
 
-                if (!songFile) {
-                    return res.status(400).json({
-                        message: 'Không có file song'
-                    })
-                }
 
                 let existAlbum = await Album.hasIdAlbum(req.body.id_album);
                 if (!existAlbum) {
@@ -319,15 +318,6 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
                     types = [...new Set(types)]; // loại bỏ các type trùng nhau
                     accounts = [...new Set(accounts)]; // loại bỏ các account trùng nhau
 
-                    // Kiểm tra tag có hợp lệ hay không
-                    // for (let id_type of types) {
-                    //     let typeExists = await Type.has(id_type);
-                    //     if (!typeExists) {
-                    //         return res.status(404).json({
-                    //             message: 'Thẻ không hợp lệ'
-                    //         })
-                    //     }
-                    // }
 
                     // Thêm lại những tag mới
                     let t = await Song.deleteTypeSong(idSong);
@@ -343,15 +333,19 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
                         await Song.addSingerSong(id_account, idSong);
                     }
 
-                    //Thêm lại file song
-                    let idFileSong = await MyDrive.uploadSong(songFile, name_song);
-                    let linkSong = "https://drive.google.com/uc?export=view&id=" + idFileSong;
-                    if (songExits.link) {
-                        await MyDrive.deleteSong(await MyDrive.getImageId(songExits.link));
+
+                    // Nếu có file mới được tải lên thì cập nhật lại file
+                    // Nếu không thì giữ nguyên file cũ
+                    if (songFile) {
+                        //Thêm lại file song
+                        let idFileSong = await MyDrive.uploadSong(songFile, name_song);
+                        linkSong = "https://drive.google.com/uc?export=view&id=" + idFileSong;
+                        if (songExits.link) {
+                            await MyDrive.deleteSong(await MyDrive.getImageId(songExits.link));
+                        }
                     }
 
                     // Thêm lại file image
-                    let linkImage = '';
                     if (imageFile) {
                         let idFileImage = await MyDrive.uploadIMG(imageFile, name_song);
                         linkImage = "https://drive.google.com/uc?export=view&id=" + idFileImage;
@@ -360,12 +354,13 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
                         }
                     }
 
+
                     // Cập nhật lại bài hát
                     let result = await Song.updateSong(idSong, linkSong, linkImage, req.body);
 
                     res.status(201).json({
                         song: result,
-                        message: 'Cập nhật bài viết thành công'
+                        message: 'Cập nhật bài hát thành công'
                     })
                 }
                 else {
@@ -392,18 +387,30 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
 })
 
 // tăng listen 
-router.patch('/listen/:id_song', async (req, res, next) => {
+router.post('/listen/:id_song', async (req, res, next) => {
     try {
         let idSong = req.params.id_song;
 
         let existSong = await Song.hasSong(idSong);
         if (existSong) {
             let qtyListen = (await Song.getListen(idSong)).listen;
-            console.log(qtyListen);
             await Song.autoListen(idSong, qtyListen + 1);
 
 
+            let d = new Date();
+            let year = d.getFullYear();
+            let month = d.getMonth() + 1;
+            let day = d.getDate();
+            let toDay = year + '-' + month + '-' + day;
 
+            let checkSongOfToDay = await Listen.hasSongOfDay(idSong, toDay);
+            if (checkSongOfToDay) {
+                var listen = await Listen.getListenOfDay(idSong, toDay);
+                await Listen.updateListenOfDay(idSong, toDay, listen + 1);
+            }
+            else {
+                await Listen.createListen(idSong);
+            }
 
             res.status(200).json({
                 message: 'Tăng lượt nghe thành công'
