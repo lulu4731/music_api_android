@@ -108,11 +108,11 @@ db.deleteTypeSong = (id_song) => {
 //cập nhật bài hát
 db.updateSong = (id_song, linkSong, linkImage, song) => {
     return new Promise((resolve, reject) => {
-        pool.query("UPDATE song SET name_song = $1, link= $2, lyrics= $3, description= $4, id_album= $5, image_song = $6 WHERE id_song = $7",
+        pool.query("UPDATE song SET name_song = $1, link= $2, lyrics= $3, description= $4, id_album= $5, image_song = $6 WHERE id_song = $7 RETURNING *",
             [song.name_song, linkSong, song.lyrics, song.description, song.id_album, linkImage, id_song],
             (err, result) => {
                 if (err) return reject(err);
-                return resolve(result);
+                return resolve(result.rows);
             })
     })
 }
