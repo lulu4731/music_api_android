@@ -257,7 +257,7 @@ async function getSong(idSong, idUser = -1) {
 // Lấy thông tin bài hát theo id_song
 router.get('/:id', async (req, res, next) => {
     try {
-        let idAccount = Auth.getUserID(req).id_account;
+        let idAccount = Auth.getUserID(req);
 
         let idSong = req.params.id;
         let songExits = await Song.hasSong(idSong);
