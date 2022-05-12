@@ -42,7 +42,7 @@ db.addSingerSong = (id_acc, id_song) => {
 //Lấy thông tin bài hát
 db.getSong = (id_song, idAccount = -1) => {
     return new Promise((resolve, reject) => {
-        pool.query("SELECT  song.id_song, song.name_song, song.link, song.lyrics, song.listen,song.image_song, count(love.id_song) as qtylove,song.description,song.song_status, song.created, exists(select 1 from love where love.id_account = $1) as lovestatus, song.id_account, song.id_album "
+        pool.query("SELECT  song.id_song, song.name_song, song.link, song.lyrics, song.listen,song.image_song, count(love.id_song) as qtylove,song.description,song.song_status, song.created, exists(select 1 from love where love.id_account = $1 and love.id_song = $2) as lovestatus, song.id_account, song.id_album "
             + "FROM(((song "
             + "LEFT JOIN love ON song.id_song = love.id_song) "
             + "INNER JOIN album ON song.id_album = album.id_album) "
