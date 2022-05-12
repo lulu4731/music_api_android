@@ -69,10 +69,10 @@ router.post('/', Auth.authenGTUser, async (req, res, next) => {
 
         if (name_song && id_album && types) { //&&idaccount
             // Loại bỏ các thể loại trùng lặp (nếu có)
-            types = [...new Set(types)];
+            // types = [...new Set(types)];
 
             //Loại bỏ các tài khoản bị trùng
-            accounts = [...new Set(accounts)]; // danh sach các singer
+            // accounts = [...new Set(accounts)]; // danh sach các singer
 
             // Kiểm tra type có hợp lệ hay không
             // for (let id_type of types) {
@@ -118,14 +118,25 @@ router.post('/', Auth.authenGTUser, async (req, res, next) => {
 
                     let idSongInsert = songResult.id_song;
 
+                    if (Array.isArray(accounts)) {
+                        for (let id_account of accounts) {
+                            await Song.addSingerSong(id_account, idSongInsert);
+                        }
+                    } else {
+                        await Song.addSingerSong(accounts, idSongInsert);
+                    }
+
+                    console.log(types)
+
                     //Thêm các liên kết type-song
-                    for (let id_type of types) {
-                        await Song.addTypeSong(idSongInsert, id_type);
+                    if (Array.isArray(types)) {
+                        for (let id_type of types) {
+                            await Song.addTypeSong(idSongInsert, id_type);
+                        }
+                    } else {
+                        await Song.addTypeSong(idSongInsert, types);
                     }
-                    // Thêm các liên kết singer-song
-                    for (let id_account of accounts) {
-                        await Song.addSingerSong(id_account, idSongInsert);
-                    }
+                   
 
                     res.status(201).json({
                         message: 'Tạo bài viết thành công',
@@ -280,7 +291,7 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
 
         //let acc = await Account.selectId(Auth.tokenData(req).id_account);
         let acc = await Auth.getTokenData(req).id_account; // idAcc của tài khoản đang đăng nhập
-        console.log(acc)
+        // console.log(acc)
 
         // Tài khoản bị khóa
         // if (acc.account_status != 0) {
@@ -293,7 +304,7 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
         if (songExits) { //&& acc === songExits.id_account
 
             let song = await Song.getSong(idSong);
-            console.log(songExits.id_account)
+            // console.log(songExits.id_account)
 
             if (acc == songExits.id_account) {
 
@@ -304,8 +315,8 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
 
                 let songFile;
                 let imageFile;
-                if(req.files && req.files.song) songFile = req.files.song
-                if(req.files && req.files.img) imageFile = req.files.img
+                if (req.files && req.files.song) songFile = req.files.song
+                if (req.files && req.files.img) imageFile = req.files.img
 
 
                 let existAlbum = await Album.hasIdAlbum(req.body.id_album);
@@ -317,23 +328,36 @@ router.put('/:id', Auth.authenGTUser, async (req, res, next) => {
 
                 //accounts.push(acc);
                 if (name_song && types && accounts) {
-                    types = [...new Set(types)]; // loại bỏ các type trùng nhau
-                    accounts = [...new Set(accounts)]; // loại bỏ các account trùng nhau
+                    // 2 lệnh bên dưới là BUG
+                    // types = [...new Set(types)]; // loại bỏ các type trùng nhau
+                    // accounts = [...new Set(accounts)]; // loại bỏ các account trùng nhau
 
-
+                    console.log(accounts)
                     // Thêm lại những tag mới
                     let t = await Song.deleteTypeSong(idSong);
                     //console.log(t);
-                    for (let id_type of types) {
-                        await Song.addTypeSong(idSong, id_type);
+
+                    if (Array.isArray(types)) {
+                        for (let id_type of types) {
+                            await Song.addTypeSong(idSong, id_type);
+                        }
+                    } else {
+                        await Song.addTypeSong(idSong, types);
                     }
+
 
                     // Thêm lại những singer_song mới
                     let flag = await Song.deleteSongSingerSong(idSong);
                     //console.log(flag);
-                    for (let id_account of accounts) {
-                        await Song.addSingerSong(id_account, idSong);
+
+                    if (Array.isArray(accounts)) {
+                        for (let id_account of accounts) {
+                            await Song.addSingerSong(id_account, idSong);
+                        }
+                    } else {
+                        await Song.addSingerSong(accounts, idSong);
                     }
+
 
 
                     // Nếu có file mới được tải lên thì cập nhật lại file
