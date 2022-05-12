@@ -3,7 +3,37 @@ const router = express.Router()
 const Auth = require('../../../middleware/auth')
 const Playlist = require('../module/playList')
 const jwt = require('jsonwebtoken')
+const Album = require('../module/album');
+const Account = require('../module/account')
+const Song = require('../module/song');
+const PlaylistSong = require('../module/playlistSong');
 
+async function getSong(idSong, idUser = -1) {
+    let song = await Song.getSong(idSong, idUser);
+
+    let album = await Album.hasIdAlbum(song.id_album);
+    let singers = await Song.getSingerSong(idSong);
+    let types = await Song.getTypes(idSong);
+
+    let singerSong = [];
+    for (let i = 0; i < singers.length; i++) {
+        let listSinger = await Account.selectId(singers[i].id_account);
+        singerSong.push(listSinger);
+    }
+
+    album['account'] = await Account.selectId(album.id_account);
+    delete album['id_account'];
+
+    song['account'] = await Account.selectId(song.id_account);
+    song['album'] = album;
+    song['singers'] = singerSong;
+    song['types'] = types;
+
+    delete song['id_account'];
+    delete song['id_album'];
+
+    return song;
+}
 
 //playList
 router.post('/fake', async (req, res, next) => {
@@ -128,13 +158,27 @@ router.get('/', Auth.authenGTUser, async (req, res, next) => {
 
     try {
         const listPlaylist = await Playlist.listPlaylistAccount(id_account, page)
+        let acc = await Account.selectId(id_account);
 
-        if (listPlaylist) {
-            return res.status(200).json({
-                message: "Lấy danh sách playlist thành công",
-                data: listPlaylist
-            })
+        let data = [];
+        for (let i = 0; i < listPlaylist.length; i++) {
+            let playList = await Playlist.getPlaylist(listPlaylist[i].id_playlist);
+            let songs = await PlaylistSong.listPlaylistSong(playList.id_playlist);
+
+            let songList = [];
+            for (let j = 0; j < songs.length; j++) {
+                let song = await getSong(songs[j].id_song, id_account);
+                songList.push(song);;
+
+            }
+            playList['songs'] = songList;
+            playList['account'] = acc;
+            data.push(playList);
         }
+        res.status(200).json({
+            message: 'Lấy danh sách các playlist thành công',
+            data: data
+        })
     } catch (error) {
         console.log(error)
         res.sendStatus(500)
