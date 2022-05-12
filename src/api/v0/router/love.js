@@ -30,7 +30,7 @@ router.post('/follow/:id', Auth.authenGTUser, async (req, res, next) => {
             })
         }
         else {
-            res.status(400).json({
+            res.status(200).json({
                 message: 'Đã có trong danh sách yêu thích'
             })
         }
@@ -63,7 +63,7 @@ router.delete('/unfollow/:id', Auth.authenGTUser, async (req, res, next) => {
             })
         }
         else {
-            res.status(400).json({
+            res.status(200).json({
                 message: 'Chưa yêu thích'
             })
         }
