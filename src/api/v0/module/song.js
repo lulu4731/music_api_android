@@ -134,7 +134,7 @@ db.getListSongtype = (id_type, page) => {
     return new Promise((resolve, reject) => {
         pool.query(`SELECT song.* FROM song, song_type WHERE song.id_song = song_type.id_song AND song_type.id_type = $1 ORDER BY song.created DESC 
                 LIMIT 20 OFFSET $2`,
-            [id_type, (page-1)*20],
+            [id_type, (page - 1) * 20],
             (err, result) => {
                 if (err) return reject(err);
                 return resolve({ list: result.rows, exist: result.rowCount > 0 });
@@ -228,7 +228,7 @@ db.autoListen = (idSong, listen) => {
 db.getListNewestSong = (page = 1) => {
     return new Promise((resolve, reject) => {
         pool.query(`SELECT song.id_song FROM song order by id_song DESC LIMIT 20 OFFSET $1`,
-            [(page-1)*20],
+            [(page - 1) * 20],
             (err, result) => {
                 if (err) return reject(err);
                 return resolve(result.rows);
@@ -264,9 +264,9 @@ db.getListSongIdOfAccount = (id, page = 0) => {
 db.getListSongIdPublicOfAccount = (id, page = 0) => {
     if (page == 0) {
         return new Promise((resolve, reject) => {
-            pool.query(`SELECT *
-            FROM Song
-            WHERE id_account = $1 AND song_status = 0`,
+            pool.query(`select SS.id_song 
+            from singer_song SS inner join song S on SS.id_song = S.id_song 
+            where SS.id_account = $1 and S.song_status = 0`,
                 [id],
                 (err, result) => {
                     if (err) return reject(err);
@@ -275,15 +275,30 @@ db.getListSongIdPublicOfAccount = (id, page = 0) => {
         })
     } else {
         return new Promise((resolve, reject) => {
-            pool.query(`SELECT *
-            FROM Song
-            WHERE id_account = $1 AND song_status = 0 LIMIT 10 OFFSET $2`,
-                [id_account, (page - 1) * 10], (err, result) => {
+            pool.query(`select SS.id_song 
+            from singer_song SS inner join song S on SS.id_song = S.id_song 
+            where SS.id_account = $1 and S.song_status = 0 LIMIT 20 OFFSET $2`,
+                [id_account, (page - 1) * 20], (err, result) => {
                     if (err) return reject(err);
                     return resolve(result.rows);
                 })
         })
     }
+}
+
+db.getSongsOfFollowing = (idUser, page = 1) => {
+    return new Promise((resolve, reject) => {
+        pool.query(`select SS.id_song 
+        from singer_song SS inner join follow_account FA on FA.id_follower = SS.id_account
+        where FA.id_following = $1
+        order by SS.id_song desc
+        limit 20 offset $2`,
+            [idUser, (page - 1) * 20],
+            (err, result) => {
+                if (err) return reject(err);
+                return resolve(result.rows);
+            })
+    })
 }
 
 module.exports = db

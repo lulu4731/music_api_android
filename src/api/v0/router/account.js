@@ -237,6 +237,36 @@ router.get('/songs', Auth.authenGTUser, async (req, res, next) => {
     }
 })
 
+/**
+ * Lấy tất cả bài hát (public) của các tài khoản mà bản thân đang follow
+ * @permisson   Ai cũng có thể thực thi
+ * @return      200: Thành công, trả về các bài viết public, đã kiểm duyệt của tài khoản
+ *              404: Tài khoản không tồn tại
+ */
+ router.get('/songs_following', Auth.authenGTUser, async (req, res, next) => {
+    try {
+        let idUser = Auth.getUserID(req);
+        let page = req.query.page;
+        if (!page) page = 1
+
+        let songsId = await Song.getSongsOfFollowing(idUser, page)
+
+        let data = [];
+        for (let i = 0; i < songsId.length; i++) {
+            let song = await getSong(songsId[i].id_song, idUser);
+            data.push(song);
+        }
+        res.status(200).json({
+            message: 'Lấy danh sách các bài hát của các tài khoản đang foloow',
+            data: data
+        })
+
+    } catch (error) {
+        console.log(error);
+        res.sendStatus(500);
+    }
+})
+
 
 /**
  * Thêm 1 tài khoản thường

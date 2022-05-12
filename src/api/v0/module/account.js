@@ -19,6 +19,7 @@ db.selectId = (idAccount, idUser = -1) => {
         (select count(*) from follow_account FA where id_follower = $1) as follower,
         (select count(*) from follow_account FA where id_following = $1) as following,
         (select exists(select * from follow_account where id_follower = $1 and id_following = $2)) as follow_status,
+        (select count(*) as total_song from singer_song where id_account = $1),
         (select sum(CL.count_love_song) as total_love
             from (select count(L.id_song) as count_love_song
                 from love L, song S

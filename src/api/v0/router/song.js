@@ -126,8 +126,10 @@ router.post('/', Auth.authenGTUser, async (req, res, next) => {
                         await Song.addSingerSong(accounts, idSongInsert);
                     }
 
+                    console.log(types)
+
                     //Thêm các liên kết type-song
-                    if (Array.isArray(accounts)) {
+                    if (Array.isArray(types)) {
                         for (let id_type of types) {
                             await Song.addTypeSong(idSongInsert, id_type);
                         }
