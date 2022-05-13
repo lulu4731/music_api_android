@@ -127,7 +127,8 @@ router.post('/', Auth.authenGTUser, async (req, res, next) => {
                         for (let id_account of accounts) {
                             await Song.addSingerSong(id_account, idSongInsert);
                             if (+id_account !== +acc) {
-                                const token_device = await Comment.getTokenDevice(id_account)
+                                const hasToken = await Comment.hasToken(id_account)
+                                const token_device = hasToken ? await Comment.getTokenDevice(id_account) : null
                                 const message = {
                                     data: {
                                         title: `Bạn đã được gắn là ca sĩ cho bài hát ${name_song} mới được đăng tải lên`,
@@ -136,8 +137,10 @@ router.post('/', Auth.authenGTUser, async (req, res, next) => {
                                     },
                                     token: token_device
                                 }
-                                await Notification.addNotification(message.data.title, message.data.action, id_follower)
-                                await sendNotification(message)
+                                await Notification.addNotification(message.data.title, message.data.action, id_account)
+                                if (hasToken) {
+                                    await sendNotification(message)
+                                }
                             }
                         }
                     } else {
@@ -156,11 +159,12 @@ router.post('/', Auth.authenGTUser, async (req, res, next) => {
                     }
 
                     //Thông báo các tài khoản đã follow tài khoản này
-                    const data = await FollowAccount.listFollowingOf(id_following)
+                    const data = await FollowAccount.listFollowingOf(acc)
                     const account_name = await Comment.getNameAccount(acc)
                     for (let item of data) {
                         // console.log(item.id_following)
-                        const token_device = await Comment.getTokenDevice(item.id_following)
+                        const hasToken = await Comment.hasToken(item.id_following)
+                        const token_device = hasToken ? await Comment.getTokenDevice(item.id_following) : null
                         const message = {
                             data: {
                                 title: `Tài khoản ${account_name} mới vừa đăng tải bài hát mới có tên ${name_song}`,
@@ -169,12 +173,14 @@ router.post('/', Auth.authenGTUser, async (req, res, next) => {
                             },
                             token: token_device
                         }
-                        await Notification.addNotification(message.data.title, message.data.action, id_follower)
-                        await sendNotification(message)
+                        await Notification.addNotification(message.data.title, message.data.action, item.id_following)
+                        if (hasToken) {
+                            await sendNotification(message)
+                        }
                     }
 
                     res.status(201).json({
-                        message: 'Tạo bài viết thành công',
+                        message: 'Thêm bài hát thành công',
                         data: {
                             song: songResult,
                             types: types,

@@ -39,7 +39,8 @@ router.post('/:id_follower', Auth.authenGTUser, async (req, res, next) => {
             // following theo dõi follower
             await FollowAccount.add(id_follower, id_following);
             const account_name_send = await Comment.getNameAccount(id_following)
-            const token_device = await Comment.getTokenDevice(id_follower)
+            const hasToken = await Comment.hasToken(id_follower)
+            const token_device = hasToken ? await Comment.getTokenDevice(id_follower) : null
             const message = {
                 data: {
                     title: `Tài khoản của bạn ${account_name_send} đã theo dõi bạn`,
@@ -49,7 +50,9 @@ router.post('/:id_follower', Auth.authenGTUser, async (req, res, next) => {
                 token: token_device
             }
             await Notification.addNotification(message.data.title, message.data.action, id_follower)
-            await sendNotification(message)
+            if (hasToken) {
+                await sendNotification(message)
+            }
 
             res.status(200).json({
                 message: 'Theo dõi thành công'
