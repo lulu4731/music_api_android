@@ -31,7 +31,7 @@ async function getSong(idSong, idUser = -1) {
     song['album'] = album;
     song['singers'] = singerSong;
     song['types'] = types;
-    song['listenof10d'] = 0
+    // song['listenof10d'] = 0
 
     delete song['id_account'];
     delete song['id_album'];
@@ -58,13 +58,20 @@ router.get('/best-new-10day', async (req, res, next) => {
         for (let i = 0; i < unique_all_id_song.length; i++) {
             let idSong = unique_all_id_song[i];
             let song = await getSong(idSong, idAccount);
+            let listenof10d
 
             if (i >= getListen.length) {
-                song.listenof10d = 0
+                listenof10d = 0
             } else {
-                song.listenof10d = +getListen[i].listen10d
+                // song.listenof10d = +getListen[i].listen10d
+                listenof10d = +getListen[i].listen10d
             }
-            data.push(song)
+
+            data.push({
+                song: song,
+                listenof10d: listenof10d
+            })
+
         }
 
         res.status(200).json({
