@@ -112,7 +112,8 @@ router.post('/:id_song/comment', Auth.authenGTUser, async (req, res, next) => {
                 const id_account_song = await Comment.getIdAccountSong(id_song)
                 if (+id_account_song !== +id_account) {
                     const account_name = await Comment.getNameAccount(id_account)
-                    const token_device = await Comment.getTokenDevice(id_account_song)
+                    const hasToken = await Comment.hasToken(id_account_song)
+                    const token_device = hasToken ? await Comment.getTokenDevice(id_account_song) : null
                     const message = {
                         data: {
                             title: `Tài khoản của bạn ${account_name} đã bình luận bài hát của bạn`,
@@ -122,7 +123,9 @@ router.post('/:id_song/comment', Auth.authenGTUser, async (req, res, next) => {
                         token: token_device
                     }
                     await Notification.addNotification(message.data.title + " : " + message.data.content, message.data.action, +id_account_song)
-                    await sendNotification(message)
+                    if (hasToken) {
+                        await sendNotification(message)
+                    }
                 }
                 const comment = await Comment.addCommentParent(id_account, id_song, content)
                 return res.status(200).json({
@@ -180,7 +183,8 @@ router.post('/:id_song/comment/:id_cmt_parent/reply', Auth.authenGTUser, async (
 
                 if (+id_account_parent !== +id_account) {
                     const account_name = await Comment.getNameAccount(id_account)
-                    const token_device = await Comment.getTokenDevice(id_account_parent)
+                    const hasToken = await Comment.hasToken(id_account_parent)
+                    const token_device = hasToken ? await Comment.getTokenDevice(id_account_parent) : null
                     const message = {
                         data: {
                             title: `Tài khoản của bạn ${account_name} đã trả lời bình luận của bạn`,
@@ -190,7 +194,9 @@ router.post('/:id_song/comment/:id_cmt_parent/reply', Auth.authenGTUser, async (
                         token: token_device
                     }
                     await Notification.addNotification(message.data.title + " : " + message.data.content, message.data.action, id_account_parent)
-                    await sendNotification(message)
+                    if (hasToken) {
+                        await sendNotification(message)
+                    }
                 }
                 return res.status(200).json({
                     message: "Trả lời bình luận thành công",

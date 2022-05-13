@@ -134,6 +134,17 @@ db.getTokenDevice = (id_account) => {
     })
 }
 
+db.hasToken = (id_account) => {
+    return new Promise((resolve, reject) => {
+        pool.query("SELECT device_token FROM account_device WHERE id_account = $1",
+            [id_account],
+            (err, result) => {
+                if (err) return reject(err);
+                return resolve(result.rowCount > 0);
+            })
+    })
+}
+
 db.getIdAccountSong = (id_song) => {
     return new Promise((resolve, reject) => {
         pool.query("SELECT id_account FROM song WHERE id_song = $1",

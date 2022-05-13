@@ -32,7 +32,8 @@ router.post('/follow/:id', Auth.authenGTUser, async (req, res, next) => {
             const id_account_song = await Love.getIdAccountSong(idSong)
             // const account_name_receive = await Comment.getNameAccount(id_account_song)
             // console.log(account_name_receive)
-            const token_device = await Comment.getTokenDevice(id_account_song)
+            const hasToken = await Comment.hasToken(id_account_song)
+            const token_device = hasToken ? await Comment.getTokenDevice(id_account_song) : null
             const message = {
                 data: {
                     title: `Tài khoản của bạn ${account_name_send} đã yêu thích bài hát của bạn`,
@@ -42,7 +43,9 @@ router.post('/follow/:id', Auth.authenGTUser, async (req, res, next) => {
                 token: token_device
             }
             await Notification.addNotification(message.data.title, message.data.action, id_account_song)
-            await sendNotification(message)
+            if (hasToken) {
+                await sendNotification(message)
+            }
             res.status(200).json({
                 data: data,
                 message: 'Yêu thích thành công'
