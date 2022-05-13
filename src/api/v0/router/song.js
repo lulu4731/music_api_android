@@ -13,6 +13,11 @@ var MyDrive = require('../../../../drive');
 const e = require('express');
 const res = require('express/lib/response');
 
+const Comment = require('../module/comment')
+const FollowAccount = require('../module/follow');
+const Notification = require('../module/notification')
+const sendNotification = require('../../../firebaseConfig/sendNotification')
+
 // router.get('/test/456', (req, res, next) => {
 //     const path = "https://drive.google.com/uc?export=view&id=123";
 //     let pos = path.lastIndexOf('=');
@@ -121,12 +126,25 @@ router.post('/', Auth.authenGTUser, async (req, res, next) => {
                     if (Array.isArray(accounts)) {
                         for (let id_account of accounts) {
                             await Song.addSingerSong(id_account, idSongInsert);
+                            if (+id_account !== +acc) {
+                                const token_device = await Comment.getTokenDevice(id_account)
+                                const message = {
+                                    data: {
+                                        title: `Bạn đã được gắn là ca sĩ cho bài hát ${name_song} mới được đăng tải lên`,
+                                        content: "",
+                                        action: `${idSongInsert}`
+                                    },
+                                    token: token_device
+                                }
+                                await Notification.addNotification(message.data.title, message.data.action, id_follower)
+                                await sendNotification(message)
+                            }
                         }
                     } else {
                         await Song.addSingerSong(accounts, idSongInsert);
                     }
 
-                    console.log(types)
+                    // console.log(types)
 
                     //Thêm các liên kết type-song
                     if (Array.isArray(types)) {
@@ -136,7 +154,24 @@ router.post('/', Auth.authenGTUser, async (req, res, next) => {
                     } else {
                         await Song.addTypeSong(idSongInsert, types);
                     }
-                   
+
+                    //Thông báo các tài khoản đã follow tài khoản này
+                    const data = await FollowAccount.listFollowingOf(id_following)
+                    const account_name = await Comment.getNameAccount(acc)
+                    for (let item of data) {
+                        // console.log(item.id_following)
+                        const token_device = await Comment.getTokenDevice(item.id_following)
+                        const message = {
+                            data: {
+                                title: `Tài khoản ${account_name} mới vừa đăng tải bài hát mới có tên ${name_song}`,
+                                content: "",
+                                action: `${idSongInsert}`
+                            },
+                            token: token_device
+                        }
+                        await Notification.addNotification(message.data.title, message.data.action, id_follower)
+                        await sendNotification(message)
+                    }
 
                     res.status(201).json({
                         message: 'Tạo bài viết thành công',

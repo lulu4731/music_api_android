@@ -117,6 +117,7 @@ router.get('/prominent', async (req, res, next) => {
         for (let i = 0; i < listPlaylist.length; i++) {
             let song = []
             songId = await Playlist_Song.listPlaylistSong(listPlaylist[i].id_playlist)
+            const acc = await Account.selectId(listPlaylist[i].id_account);
 
             for (let i = 0; i < songId.length; i++) {
                 song.push(await getSong(songId[i].id_song))
@@ -127,6 +128,7 @@ router.get('/prominent', async (req, res, next) => {
                 name_playlist: listPlaylist[i].name_playlist,
                 playlist_status: listPlaylist[i].playlist_status,
                 total_listen: +listPlaylist[i].total_listen,
+                account: acc,
                 song: song
             })
         }

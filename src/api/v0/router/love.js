@@ -7,6 +7,9 @@ var Song = require('../module/song');
 var Love = require('../module/love')
 var Album = require('../module/album');
 var Auth = require('../../../middleware/auth');
+const Comment = require('../module/comment')
+const Notification = require('../module/notification')
+const sendNotification = require('../../../firebaseConfig/sendNotification')
 
 router.post('/follow/:id', Auth.authenGTUser, async (req, res, next) => {
     try {
@@ -24,6 +27,22 @@ router.post('/follow/:id', Auth.authenGTUser, async (req, res, next) => {
         let existLove = await Love.hasLove(acc, idSong);
         if (!existLove) {
             let data = await Love.addLove(acc, idSong);
+            const account_name_send = await Comment.getNameAccount(acc)
+            // console.log(account_name_send)
+            const id_account_song = await Love.getIdAccountSong(idSong)
+            // const account_name_receive = await Comment.getNameAccount(id_account_song)
+            // console.log(account_name_receive)
+            const token_device = await Comment.getTokenDevice(id_account_song)
+            const message = {
+                data: {
+                    title: `Tài khoản của bạn ${account_name_send} đã yêu thích bài hát của bạn`,
+                    content: "",
+                    action: `${idSong}`
+                },
+                token: token_device
+            }
+            await Notification.addNotification(message.data.title, message.data.action, id_account_song)
+            await sendNotification(message)
             res.status(200).json({
                 data: data,
                 message: 'Yêu thích thành công'
@@ -74,7 +93,7 @@ router.delete('/unfollow/:id', Auth.authenGTUser, async (req, res, next) => {
     }
 });
 
-async function getSong(idSong, idUser = -1){
+async function getSong(idSong, idUser = -1) {
     let song = await Song.getSong(idSong, idUser);
 
     let album = await Album.hasIdAlbum(song.id_album);
@@ -89,7 +108,7 @@ async function getSong(idSong, idUser = -1){
 
     album['account'] = await Account.selectId(album.id_account);
     delete album['id_account'];
-            
+
     song['account'] = await Account.selectId(song.id_account);
     song['album'] = album;
     song['singers'] = singerSong;
@@ -106,7 +125,7 @@ router.get('/love-song', Auth.authenGTUser, async (req, res, next) => {
     try {
         //let acc = await Account.selectId(Auth.tokenData(req).id_account);
         let page = req.query.page
-        if(!page || page < 1) page = 1
+        if (!page || page < 1) page = 1
         let acc = Auth.getTokenData(req).id_account;
 
         let idUser = Auth.getUserID(req)
@@ -121,7 +140,7 @@ router.get('/love-song', Auth.authenGTUser, async (req, res, next) => {
 
         let list = await Love.getListSong(acc, page);
         let data = []
-        for(element of list){
+        for (element of list) {
             let song = await getSong(element.id_song, idUser)
             data.push(song)
         }

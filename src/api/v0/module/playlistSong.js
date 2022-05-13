@@ -120,7 +120,7 @@ db.listPlaylistSong = (id_playlist, page = 0) => {
 }
 db.listPlaylistTotalListenSong = () => {
     return new Promise((resolve, reject) => {
-        pool.query(`SELECT Pl.id_playlist, PL.name_playlist, PL.playlist_status, sum(S.listen) as total_listen FROM playlist_song PLS 
+        pool.query(`SELECT Pl.id_account, Pl.id_playlist, PL.name_playlist, PL.playlist_status, sum(S.listen) as total_listen FROM playlist_song PLS 
         INNER JOIN playlist PL ON PL.id_playlist = PLS.id_playlist             
         INNER JOIN song S ON S.id_song = PLS.id_song            
         WHERE PL.playlist_status = 0

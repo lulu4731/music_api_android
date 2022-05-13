@@ -41,7 +41,7 @@ db.getListSong = (idAccount, page) => {
     return new Promise((resolve, reject) => {
         pool.query(`SELECT song.* FROM love INNER JOIN song ON love.id_song = song.id_song
                     WHERE love.id_account = $1 LIMIT 20 OFFSET $2`,
-            [idAccount, (page-1)*20],
+            [idAccount, (page - 1) * 20],
             (err, result) => {
                 if (err) return reject(err);
                 return resolve(result.rows);
@@ -49,5 +49,15 @@ db.getListSong = (idAccount, page) => {
     })
 }
 
+db.getIdAccountSong = (id_song) => {
+    return new Promise((resolve, reject) => {
+        pool.query(`SELECT id_account from song where id_song = $1`,
+            [id_song],
+            (err, result) => {
+                if (err) return reject(err);
+                return resolve(result.rows[0].id_account);
+            })
+    })
+}
 
 module.exports = db;
