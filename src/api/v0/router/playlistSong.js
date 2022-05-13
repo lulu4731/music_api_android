@@ -129,7 +129,7 @@ router.get('/prominent', async (req, res, next) => {
                 playlist_status: listPlaylist[i].playlist_status,
                 total_listen: +listPlaylist[i].total_listen,
                 account: acc,
-                song: song
+                songs: song
             })
         }
         return res.status(200).json({

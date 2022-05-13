@@ -14,12 +14,12 @@ db.connect()
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-app.use(express.json({limit: '30mb'}));
-app.use(express.urlencoded({extended: false, limit: '30mb'}));
+app.use(express.json({ limit: '30mb' }));
+app.use(express.urlencoded({ extended: false, limit: '30mb' }));
 
 app.use(fileUpload({
     limits: {
-        fileSize: 30*1024*1024
+        fileSize: 30 * 1024 * 1024
     },
     abortOnLimit: true
 }));

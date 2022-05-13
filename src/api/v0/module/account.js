@@ -127,7 +127,7 @@ db.getSearch = (search, page = 0) => {
         return new Promise((resolve, reject) => {
             pool.query(`select id_account
                 from account
-                where lower(account_name) like $1`,
+                where lower(account_name) like $1 order by id_account desc`,
                 ['%' + search + '%'],
                 (err, result) => {
                     if (err) return reject(err);
@@ -138,7 +138,7 @@ db.getSearch = (search, page = 0) => {
         return new Promise((resolve, reject) => {
             pool.query(`select id_account
                 from account
-                where lower(account_name) like $1 LIMIT 10 OFFSET $2`,
+                where lower(account_name) like $1 order by id_account desc LIMIT 10 OFFSET $2`,
                 ['%' + search + '%', (page - 1) * 10],
                 (err, result) => {
                     if (err) return reject(err);

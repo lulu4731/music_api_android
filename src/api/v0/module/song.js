@@ -241,7 +241,8 @@ db.getListSongIdOfAccount = (id, page = 0) => {
         return new Promise((resolve, reject) => {
             pool.query(`SELECT *
             FROM Song
-            WHERE id_account = $1`,
+            WHERE id_account = $1
+            order by id_song desc`,
                 [id],
                 (err, result) => {
                     if (err) return reject(err);
@@ -252,7 +253,7 @@ db.getListSongIdOfAccount = (id, page = 0) => {
         return new Promise((resolve, reject) => {
             pool.query(`SELECT *
             FROM Song
-            WHERE id_account = $1 LIMIT 10 OFFSET $2`,
+            WHERE id_account = $1 order by id_song desc LIMIT 10 OFFSET $2`,
                 [id_account, (page - 1) * 10], (err, result) => {
                     if (err) return reject(err);
                     return resolve(result.rows);
@@ -266,7 +267,7 @@ db.getListSongIdPublicOfAccount = (id, page = 0) => {
         return new Promise((resolve, reject) => {
             pool.query(`select SS.id_song 
             from singer_song SS inner join song S on SS.id_song = S.id_song 
-            where SS.id_account = $1 and S.song_status = 0`,
+            where SS.id_account = $1 and S.song_status = 0 order by S.id_song desc`,
                 [id],
                 (err, result) => {
                     if (err) return reject(err);
@@ -277,7 +278,7 @@ db.getListSongIdPublicOfAccount = (id, page = 0) => {
         return new Promise((resolve, reject) => {
             pool.query(`select SS.id_song 
             from singer_song SS inner join song S on SS.id_song = S.id_song 
-            where SS.id_account = $1 and S.song_status = 0 LIMIT 20 OFFSET $2`,
+            where SS.id_account = $1 and S.song_status = 0 order by S.id_song desc LIMIT 20 OFFSET $2`,
                 [id_account, (page - 1) * 20], (err, result) => {
                     if (err) return reject(err);
                     return resolve(result.rows);
@@ -301,4 +302,14 @@ db.getSongsOfFollowing = (idUser, page = 1) => {
     })
 }
 
+db.getAllSong = () => {
+    return new Promise((resolve, reject) => {
+        pool.query(`SELECT id_song FROM song ORDER BY listen FETCH FIRST 100 ROWS ONLY `,
+            [],
+            (err, result) => {
+                if (err) return reject(err);
+                return resolve(result.rows);
+            })
+    })
+}
 module.exports = db

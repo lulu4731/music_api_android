@@ -77,13 +77,21 @@ router.get('/comment_parent/:id_cmt', async (req, res, next) => {
     const cmtExists = await Comment.has(id_cmt)
     if (cmtExists) {
         const data = await Comment.getComment(id_cmt)
+        const account_cmt_parent = await Account.selectId(data.id_account)
+        data['account'] = account_cmt_parent
         const listChildren = await Comment.getListCommentChildren(id_cmt)
 
+        let listCmtChildren = []
+        for (let account_children of listChildren) {
+            let account_cmt_children = await Account.selectId(account_children.id_account)
+            account_children['account'] = account_cmt_children
+            listCmtChildren.push(account_children)
+        }
         return res.status(200).json({
             message: 'Lấy 1 bình luận thành công',
             data: {
                 ...data,
-                listChildren: listChildren
+                listChildren: listCmtChildren
             }
         })
     } else {

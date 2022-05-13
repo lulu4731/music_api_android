@@ -31,6 +31,7 @@ async function getSong(idSong, idUser = -1) {
     song['album'] = album;
     song['singers'] = singerSong;
     song['types'] = types;
+    song['listenof10d'] = 0
 
     delete song['id_account'];
     delete song['id_album'];
@@ -42,15 +43,28 @@ async function getSong(idSong, idUser = -1) {
 router.get('/best-new-10day', async (req, res, next) => {
     try {
         let idAccount = Auth.getUserID(req);
-        let data = await Listen.getListenOf10Day();
+        let getListen = await Listen.getListenOf10Day();
+        let getAllSong = await Song.getAllSong()
 
-        let listSong = [];
-        for (let i = 0; i < data.length; i++) {
-            let idSong = data[i].id_song;
+        let getListenSong = getListen.map(song => song.id_song)
+        getAllSong = getAllSong.map(song => song.id_song)
+
+        const all_id_song = [...getListenSong, ...getAllSong]
+        let unique_all_id_song
+
+        unique_all_id_song = [...new Set(all_id_song)]
+
+        let data = []
+        for (let i = 0; i < unique_all_id_song.length; i++) {
+            let idSong = unique_all_id_song[i];
             let song = await getSong(idSong, idAccount);
-     
-            data[i].song = song;
-            delete data[i].id_song;
+
+            if (i >= getListen.length) {
+                song.listenof10d = 0
+            } else {
+                song.listenof10d = +getListen[i].listen10d
+            }
+            data.push(song)
         }
 
         res.status(200).json({
@@ -76,10 +90,10 @@ router.get('/best-new-3day', async (req, res, next) => {
             let song = await getSong(idSong, idAccount)
             let listentop3 = await Listen.getListen(idSong)
 
-            for (let j = 0; j < listentop3.length; j++ ) {
+            for (let j = 0; j < listentop3.length; j++) {
                 delete listentop3[j].id_song
             }
-            
+
             top3[i].song = song
             top3[i].listen = listentop3
 
