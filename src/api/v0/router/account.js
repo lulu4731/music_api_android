@@ -802,13 +802,20 @@ router.post('/forget/password', async (req, res) => {
             });
         } else {
             let transporter = nodemailer.createTransport({
-                service: 'gmail',
+                service: 'hotmail',
                 auth: {
                     user: process.env.AUTH_EMAIL, // generated ethereal user
                     pass: process.env.AUTH_PASS, // generated ethereal password
                 },
             });
 
+            // await transporter.verify((error, success) => {
+            //     if (error) {
+            //         console.log('a')
+            //     } else {
+            //         console.log('b')
+            //     }
+            // })
             await transporter.sendMail({
                 from: process.env.AUTH_EMAIL, // sender address
                 to: `${email}`, // list of receivers
