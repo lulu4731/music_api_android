@@ -126,7 +126,7 @@ router.post('/:id_song/comment', Auth.authenGTUser, async (req, res, next) => {
                         data: {
                             title: `Tài khoản của bạn ${account_name} đã bình luận bài hát của bạn`,
                             content: content,
-                            action: ""
+                            action: `comment/${id_song}`
                         },
                         token: token_device
                     }
@@ -197,7 +197,7 @@ router.post('/:id_song/comment/:id_cmt_parent/reply', Auth.authenGTUser, async (
                         data: {
                             title: `Tài khoản của bạn ${account_name} đã trả lời bình luận của bạn`,
                             content: content,
-                            action: `id_cmt-parent: ${id_cmt_parent}-id_cmt_children: ${comment.id_cmt}`
+                            action: `reply/${id_song}/${id_cmt_parent}`
                         },
                         token: token_device
                     }

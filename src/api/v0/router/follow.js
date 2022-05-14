@@ -45,7 +45,7 @@ router.post('/:id_follower', Auth.authenGTUser, async (req, res, next) => {
                 data: {
                     title: `Tài khoản của bạn ${account_name_send} đã theo dõi bạn`,
                     content: "",
-                    action: `${id_following}`
+                    action: `follow/${id_following}`
                 },
                 token: token_device
             }

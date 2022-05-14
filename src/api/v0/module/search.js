@@ -31,13 +31,13 @@ db.getSearchSong = (keyword, page = 0) => {
     }
 }
 
-db.getSearchNamePlaylist = (keyword, id_account, page = 0) => {
+db.getSearchNamePlaylist = (keyword, page = 0) => {
     if (page == 0) {
         return new Promise((resolve, reject) => {
-            pool.query(`SELECT id_playlist, name_playlist, playlist_status
+            pool.query(`SELECT id_playlist, name_playlist, playlist_status, id_account
             from playlist
-            where playlist_status=0 and id_account = $1 and (lower(name_playlist) like $2)`,
-                [id_account, '%' + keyword + '%'],
+            where playlist_status=0 and (lower(name_playlist) like $1)`,
+                ['%' + keyword + '%'],
                 (err, result) => {
                     if (err) return reject(err);
                     return resolve(result.rows)
@@ -46,11 +46,11 @@ db.getSearchNamePlaylist = (keyword, id_account, page = 0) => {
         })
     } else {
         return new Promise((resolve, reject) => {
-            pool.query(`SELECT id_playlist, name_playlist, playlist_status
+            pool.query(`SELECT id_playlist, name_playlist, playlist_status, id_account
             from playlist
-            where playlist_status=0 and id_account = $1 and (lower(name_playlist) like $2)
-            LIMIT 10 OFFSET $3`,
-                [id_account, '%' + keyword + '%', (page - 1) * 10],
+            where playlist_status=0 and (lower(name_playlist) like $1)
+            LIMIT 10 OFFSET $2`,
+                ['%' + keyword + '%', (page - 1) * 10],
                 (err, result) => {
                     if (err) return reject(err);
                     return resolve(result.rows)

@@ -133,7 +133,7 @@ router.post('/', Auth.authenGTUser, async (req, res, next) => {
                                     data: {
                                         title: `Bạn đã được gắn là ca sĩ cho bài hát ${name_song} mới được đăng tải lên`,
                                         content: "",
-                                        action: `${idSongInsert}`
+                                        action: `singer/${idSongInsert}`
                                     },
                                     token: token_device
                                 }
@@ -169,7 +169,7 @@ router.post('/', Auth.authenGTUser, async (req, res, next) => {
                             data: {
                                 title: `Tài khoản ${account_name} mới vừa đăng tải bài hát mới có tên ${name_song}`,
                                 content: "",
-                                action: `${idSongInsert}`
+                                action: `newsong/${idSongInsert}`
                             },
                             token: token_device
                         }

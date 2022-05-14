@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken')
 const Account = require('../module/account')
 const Song = require('../module/song')
 const Album = require('../module/album')
+const Playlist_Song = require('../module/playlistSong')
 
 const getSong = async (idSong, idUser = -1) => {
     let song = await Song.getSong(idSong, idUser);
@@ -46,27 +47,35 @@ router.get('/', async (req, res, next) => {
 
         k = k.toLowerCase()
 
-        let idUser
-        const authorizationHeader = req.headers['authorization']
-        if (authorizationHeader) {
-            const token = authorizationHeader.split(' ')[1]
-            if (token) {
-                jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, data) => {
-                    if (!err) {
-                        idUser = Auth.getTokenData(req).id_account
-                    }
-                })
-            }
-        }
-
+        let idUser = Auth.getUserID(req)
 
         if (idUser) {
             const list_id_song = await Search.getSearchSong(k)
-            const playList = await Search.getSearchNamePlaylist(k, +idUser)
+            const listPlaylist = await Search.getSearchNamePlaylist(k)
             const list_id_account = await Search.getSearchNameAccount(k)
 
             let account = []
             let song = []
+
+            let playListSongAccount = [];
+
+            for (let i = 0; i < listPlaylist.length; i++) {
+                let song = []
+                songId = await Playlist_Song.listPlaylistSong(listPlaylist[i].id_playlist)
+                const acc = await Account.selectId(listPlaylist[i].id_account);
+
+                for (let i = 0; i < songId.length; i++) {
+                    song.push(await getSong(songId[i].id_song))
+                }
+
+                playListSongAccount.push({
+                    id_playlist: listPlaylist[i].id_playlist,
+                    name_playlist: listPlaylist[i].name_playlist,
+                    playlist_status: listPlaylist[i].playlist_status,
+                    account: acc,
+                    songs: song
+                })
+            }
 
             for (let i = 0; i < list_id_song.length; i++) {
                 song.push(await getSong(list_id_song[i].id_song, idUser))
@@ -77,9 +86,9 @@ router.get('/', async (req, res, next) => {
             }
 
             const data = {
-                song: song,
-                playList: playList,
-                account: account
+                songs: song,
+                playLists: playListSongAccount,
+                accounts: account
             }
 
             return res.status(200).json({

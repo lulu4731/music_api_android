@@ -38,7 +38,7 @@ router.post('/follow/:id', Auth.authenGTUser, async (req, res, next) => {
                 data: {
                     title: `Tài khoản của bạn ${account_name_send} đã yêu thích bài hát của bạn`,
                     content: "",
-                    action: `${idSong}`
+                    action: `love/${idSong}`
                 },
                 token: token_device
             }
