@@ -912,6 +912,7 @@ router.post('/forget/change', async (req, res) => {
         bcrypt.hash(new_pass, saltRounds, async (err, hash) => {
             new_pass = hash;
             await Account.updatePassword(existAccount.id_account, new_pass);
+            await Account.deleteAccountVerification(existAccount.id_account)
 
             return res.status(200).json({
                 message: 'Thay đổi mật khẩu thành công',

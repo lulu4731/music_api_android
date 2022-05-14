@@ -375,4 +375,15 @@ db.checkTimeCode = (id_account) => {
             });
     })
 }
+
+db.deleteAccountVerification = (id_account) => {
+    return new Promise((resolve, reject) => {
+        pool.query('DELETE FROM verification WHERE id_account = $1',
+            [id_account],
+            (err, result) => {
+                if (err) return reject(err);
+                return resolve(1);
+            })
+    })
+}
 module.exports = db
