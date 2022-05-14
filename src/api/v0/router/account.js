@@ -11,6 +11,7 @@ const PlayList = require('../module/playList');
 const PlaylistSong = require('../module/playlistSong');
 const Follow = require('../module/follow');
 const MyDrive = require('../../../../drive');
+const nodemailer = require("nodemailer");
 
 
 async function getSong(idSong, idUser = -1) {
@@ -243,7 +244,7 @@ router.get('/songs', Auth.authenGTUser, async (req, res, next) => {
  * @return      200: Thành công, trả về các bài viết public, đã kiểm duyệt của tài khoản
  *              404: Tài khoản không tồn tại
  */
- router.get('/songs_following', Auth.authenGTUser, async (req, res, next) => {
+router.get('/songs_following', Auth.authenGTUser, async (req, res, next) => {
     try {
         let idUser = Auth.getUserID(req);
         let page = req.query.page;
@@ -774,4 +775,152 @@ router.put('/:id/unblock', Auth.authenAdmin, async (req, res, next) => {
     }
 })
 
+
+const createCode = () => {
+    var result = '';
+    for (var i = 0; i < 6; i++) {
+        result += String(Math.floor(Math.random() * 10));
+    }
+    return result;
+}
+
+router.post('/forget/password', async (req, res) => {
+    try {
+        const { email } = req.body
+        const code = createCode()
+        const existAccount = await Account.hasEmailAccount(email)
+
+        if (!email) {
+            return res.status(400).json({
+                message: 'Thiếu dữ liệu gửi về'
+            });
+        }
+
+        if (!existAccount) {
+            return res.status(404).json({
+                message: 'Không tồn tại email này'
+            });
+        } else {
+            let transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: "gauxanhhero989898@gmail.com", // generated ethereal user
+                    pass: "Gauxanhhero898989", // generated ethereal password
+                },
+            });
+
+            await transporter.sendMail({
+                from: "gauxanhhero989898@gmail.com", // sender address
+                to: `${email}`, // list of receivers
+                subject: "Lấy lại mật khẩu Wonder Music", // Subject line
+                html: `<h3><b>Xin chao ${existAccount.account_name}</b></h3>
+                        <p>Đây là mã code của bạn:</p>
+                        <h2>&emsp;Code: ${code}</h2>
+                        <p>Quản lý Wonder Music</p>
+                `, // html body
+            })
+
+            const isId = await Account.isHasIdVerification(existAccount.id_account)
+
+            if (isId) {
+                await Account.updateVerification(existAccount.id_account, code)
+            } else {
+                await Account.insertVerification(existAccount.id_account, code)
+            }
+
+            return res.status(200).json({
+                message: 'Đã gửi mã xác nhận',
+            });
+        }
+    } catch (error) {
+        return res.status(500)
+    }
+})
+
+router.post('/forget/verify', async (req, res) => {
+    try {
+        const { email, code } = req.body
+        const existAccount = await Account.hasEmailAccount(email)
+
+        if (!email || !code) {
+            return res.status(400).json({
+                message: 'Thiếu dữ liệu gửi về'
+            });
+        }
+
+
+        if (!existAccount) {
+            return res.status(404).json({
+                message: 'Không tồn tại email này'
+            });
+        }
+
+        const existEmailAndCode = await Account.isHasCodeAndEmail(existAccount.id_account, code)
+        if (!existEmailAndCode) {
+            return res.status(404).json({
+                message: 'Email và code không trùng nhau'
+            });
+        }
+
+        const isValidCode = await Account.checkTimeCode(existAccount.id_account)
+        if (!isValidCode) {
+            return res.status(404).json({
+                message: 'Code hết hạn '
+            });
+        }
+
+        return res.status(200).json({
+            message: 'Mã code hợp lệ',
+        })
+    } catch (error) {
+        return res.status(500)
+    }
+})
+
+router.post('/forget/change', async (req, res) => {
+    try {
+        let { email, code, new_pass } = req.body
+        const existAccount = await Account.hasEmailAccount(email)
+
+        if (!email || !code || !new_pass) {
+            return res.status(400).json({
+                message: 'Thiếu dữ liệu gửi về'
+            });
+        }
+
+
+        if (!existAccount) {
+            return res.status(404).json({
+                message: 'Không tồn tại email này'
+            });
+        }
+
+        const existEmailAndCode = await Account.isHasCodeAndEmail(existAccount.id_account, code)
+        if (!existEmailAndCode) {
+            return res.status(404).json({
+                message: 'Email và code không trùng nhau'
+            });
+        }
+
+        const isValidCode = await Account.checkTimeCode(existAccount.id_account)
+        if (!isValidCode) {
+            return res.status(404).json({
+                message: 'Code hết hạn '
+            });
+        }
+
+        bcrypt.hash(new_pass, saltRounds, async (err, hash) => {
+            new_pass = hash;
+            await Account.updatePassword(existAccount.id_account, new_pass);
+            await Account.deleteAccountVerification(existAccount.id_account)
+
+            return res.status(200).json({
+                message: 'Thay đổi mật khẩu thành công',
+            })
+        });
+
+    } catch (error) {
+        return res.status(500)
+    }
+})
 module.exports = router
