@@ -810,7 +810,7 @@ router.post('/forget/password', async (req, res) => {
             });
 
             await transporter.sendMail({
-                from: "gauxanhhero989898@gmail.com", // sender address
+                from: process.env.AUTH_EMAIL, // sender address
                 to: `${email}`, // list of receivers
                 subject: "Lấy lại mật khẩu Wonder Music", // Subject line
                 html: `<h3><b>Xin chao ${existAccount.account_name}</b></h3>
