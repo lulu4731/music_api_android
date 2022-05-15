@@ -106,7 +106,7 @@ db.getListenOf3Day = () => {
 //Lấy thông tin listen trong 10d gần nhất
 db.getListen = (idSong) => {
     return new Promise((resolve, reject) => {
-        pool.query(`SELECT * FROM listen WHERE id_song = $1 AND day >= (now()::date - 10) ORDER BY day DESC`,
+        pool.query(`SELECT id_song, day +1, listenofday FROM listen WHERE id_song = $1 AND day >= (date_trunc('day', timezone('Asia/Ho_Chi_Minh'::text, now()))::date) - 10 ORDER BY day DESC`,
             [idSong],
             (err, result) => {
                 if (err) return reject(err);
